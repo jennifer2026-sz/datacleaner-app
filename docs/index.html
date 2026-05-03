@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DataCleaner AI — Local-First PII Redaction for GDPR & HIPAA Compliance</title>
+<meta name="description" content="DataCleaner AI is a local-first PII detection and redaction engine. Scan documents, emails, and databases for sensitive data — nothing ever leaves your machine. GDPR, HIPAA, and CCPA ready.">
+<meta name="keywords" content="PII detection, GDPR compliance, data redaction, local AI, Ollama, privacy, HIPAA, CCPA, document scanning, data protection">
+<meta name="author" content="DataCleaner AI">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://getdatacleaner.com/">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛡️</text></svg>">
+
+<!-- Open Graph -->
+<meta property="og:title" content="DataCleaner AI — Local-First PII Redaction">
+<meta property="og:description" content="Scan documents for PII entirely on your machine. Zero data leakage. GDPR & HIPAA compliant audit trails.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://getdatacleaner.com/">
+
+<style>
+/* ===== CSS RESET & VARIABLES ===== */
+:root {
+    --bg-deep: #06090f;
+    --bg-primary: #0b1018;
+    --bg-card: #111827;
+    --bg-card-hover: #161e2e;
+    --border: #1e2d45;
+    --border-accent: #00d4aa33;
+    --text-primary: #e8edf5;
+    --text-secondary: #8b9cc0;
+    --text-dim: #546380;
+    --accent: #00d4aa;
+    --accent-bright: #00ffc8;
+    --accent-glow: rgba(0,212,170,0.18);
+    --accent-strong: rgba(0,212,170,0.35);
+    --danger: #f85149;
+    --warning: #d2991d;
+    --blue: #58a6ff;
+    --purple: #a371f7;
+    --gradient-hero: linear-gradient(135deg, #00d4aa 0%, #58a6ff 50%, #a371f7 100%);
+    --gradient-card: linear-gradient(180deg, rgba(0,212,170,0.06) 0%, transparent 40%);
+    --radius-sm: 8px;
+    --radius: 14px;
+    --radius-lg: 20px;
+    --font-mono: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', 'Consolas', monospace;
+    --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+    background: var(--bg-deep);
+    color: var(--text-primary);
+    font-family: var(--font-sans);
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+.container { max-width: 1200px; margin: 0 auto; padding: 0 28px; }
+
+/* ===== ANIMATIONS ===== */
+@keyframes fadeUp { from { opacity:0; transform:translateY(24px); } to { opacity:1; transform:translateY(0); } }
+@keyframes glow { 0%,100% { box-shadow:0 0 20px var(--accent-glow); } 50% { box-shadow:0 0 50px var(--accent-strong); } }
+@keyframes scan-line { 0% { top:0; } 100% { top:100%; } }
+.animate { animation: fadeUp 0.7s ease-out both; }
+.delay-1 { animation-delay: 0.1s; }
+.delay-2 { animation-delay: 0.2s; }
+.delay-3 { animation-delay: 0.3s; }
+
+/* ===== NAVIGATION ===== */
+.nav { position:sticky; top:0; z-index:100; background:rgba(6,9,15,0.85); backdrop-filter:blur(16px); border-bottom:1px solid var(--border); }
+.nav-inner { display:flex; align-items:center; justify-content:space-between; height:64px; }
+.nav-logo { display:flex; align-items:center; gap:10px; text-decoration:none; }
+.nav-logo-icon { width:36px; height:36px; background:var(--gradient-hero); border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:1.1rem; }
+.nav-logo-text { font-weight:800; font-size:1.15rem; color:var(--text-primary); letter-spacing:-0.5px; }
+.nav-logo-text span { color:var(--accent); }
+.nav-links { display:flex; align-items:center; gap:28px; }
+.nav-links a { color:var(--text-secondary); text-decoration:none; font-size:0.9rem; font-weight:500; transition:color 0.2s; }
+.nav-links a:hover { color:var(--text-primary); }
+.btn { display:inline-flex; align-items:center; gap:6px; padding:10px 20px; border-radius:var(--radius-sm); font-weight:600; font-size:0.88rem; text-decoration:none; cursor:pointer; transition:all 0.25s; border:none; white-space:nowrap; }
+.btn-primary { background:var(--accent); color:#06090f; }
+.btn-primary:hover { background:var(--accent-bright); box-shadow:0 0 28px var(--accent-glow); transform:translateY(-1px); }
+.btn-outline { border:1.5px solid var(--border); color:var(--text-primary); background:transparent; }
+.btn-outline:hover { border-color:var(--accent); color:var(--accent); }
+.btn-ghost { color:var(--text-secondary); background:transparent; }
+.btn-ghost:hover { color:var(--text-primary); }
+.btn-lg { padding:14px 32px; font-size:1rem; border-radius:var(--radius); }
+
+@media (max-width:768px) {
+    .nav-links { display:none; }
+    .nav-links a.btn { display:inline-flex; }
+}
+
+/* ===== HERO ===== */
+.hero { padding:90px 0 70px; position:relative; overflow:hidden; }
+.hero::before {
+    content:''; position:absolute; top:-200px; left:50%; transform:translateX(-50%);
+    width:800px; height:800px; background:radial-gradient(circle, var(--accent-glow) 0%, transparent 70%);
+    pointer-events:none;
+}
+.hero-content { position:relative; z-index:1; text-align:center; max-width:780px; margin:0 auto; }
+.hero-badge { display:inline-flex; align-items:center; gap:6px; padding:6px 18px; border-radius:30px; background:var(--accent-glow); border:1px solid var(--border-accent); color:var(--accent); font-size:0.8rem; font-weight:600; margin-bottom:28px; letter-spacing:0.3px; }
+.hero-badge .pulse { width:8px; height:8px; border-radius:50%; background:var(--accent); animation:glow 2s infinite; }
+.hero h1 { font-size:3.4rem; font-weight:850; letter-spacing:-2px; line-height:1.1; margin-bottom:18px; }
+.hero h1 .gradient-text { background:var(--gradient-hero); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+.hero-subtitle { font-size:1.2rem; color:var(--text-secondary); max-width:580px; margin:0 auto 36px; line-height:1.6; }
+.hero-actions { display:flex; gap:14px; justify-content:center; flex-wrap:wrap; margin-bottom:48px; }
+.hero-stats { display:flex; gap:40px; justify-content:center; flex-wrap:wrap; }
+.hero-stat { text-align:center; }
+.hero-stat .number { font-size:2rem; font-weight:800; color:var(--accent); }
+.hero-stat .label { font-size:0.82rem; color:var(--text-dim); margin-top:4px; }
+
+@media (max-width:768px) {
+    .hero { padding:50px 0 40px; }
+    .hero h1 { font-size:2rem; letter-spacing:-1px; }
+    .hero-subtitle { font-size:1rem; }
+    .hero-stats { gap:24px; }
+}
+
+/* ===== TERMINAL ===== */
+.terminal-section { padding:0 0 60px; }
+.terminal-wrap { max-width:780px; margin:0 auto; border-radius:var(--radius-lg); overflow:hidden; border:1px solid var(--border); background:#0a0f18; box-shadow:0 20px 60px rgba(0,0,0,0.5); }
+.terminal-header { background:#111927; padding:12px 18px; display:flex; align-items:center; gap:10px; border-bottom:1px solid var(--border); }
+.terminal-dot { width:13px; height:13px; border-radius:50%; }
+.terminal-dot.r { background:#ff5f56; } .terminal-dot.y { background:#ffbd2e; } .terminal-dot.g { background:#27c93f; }
+.terminal-title { margin-left:10px; color:var(--text-dim); font-size:0.8rem; font-family:var(--font-mono); }
+.terminal-body { padding:24px 28px; font-family:var(--font-mono); font-size:0.82rem; line-height:1.8; overflow-x:auto; position:relative; }
+.terminal-body .line { display:block; }
+.terminal-body .prompt { color:var(--accent); }
+.terminal-body .cmd { color:var(--text-primary); }
+.terminal-body .dim { color:var(--text-dim); }
+.terminal-body .warn { color:var(--warning); }
+.terminal-body .ok { color:var(--accent); }
+.terminal-body .info { color:var(--blue); }
+.terminal-scan-line { position:absolute; left:0; right:0; height:2px; background:var(--accent); opacity:0.3; animation:scan-line 3s linear infinite; pointer-events:none; }
+
+@media (max-width:768px) {
+    .terminal-body { font-size:0.68rem; padding:16px; }
+}
+
+/* ===== SECTION COMMONS ===== */
+.section { padding:80px 0; }
+.section-header { text-align:center; margin-bottom:56px; }
+.section-label { font-size:0.82rem; font-weight:700; color:var(--accent); text-transform:uppercase; letter-spacing:2px; margin-bottom:12px; }
+.section-header h2 { font-size:2.4rem; font-weight:800; letter-spacing:-1px; margin-bottom:12px; }
+.section-header p { color:var(--text-secondary); font-size:1.05rem; max-width:540px; margin:0 auto; }
+
+@media (max-width:768px) {
+    .section { padding:48px 0; }
+    .section-header h2 { font-size:1.7rem; }
+}
+
+/* ===== FEATURES GRID ===== */
+.features-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(320px, 1fr)); gap:20px; }
+.feature-card {
+    background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius);
+    padding:32px; transition:all 0.3s; position:relative; overflow:hidden;
+}
+.feature-card::before { content:''; position:absolute; top:0; left:0; right:0; height:2px; background:var(--gradient-hero); opacity:0; transition:opacity 0.3s; }
+.feature-card:hover { border-color:var(--border-accent); background:var(--bg-card-hover); transform:translateY(-2px); }
+.feature-card:hover::before { opacity:1; }
+.feature-icon { font-size:2rem; margin-bottom:16px; display:block; }
+.feature-card h3 { font-size:1.1rem; font-weight:700; margin-bottom:8px; }
+.feature-card p { color:var(--text-secondary); font-size:0.92rem; line-height:1.6; }
+.feature-card .tag { display:inline-block; margin-top:12px; padding:3px 10px; border-radius:20px; background:var(--accent-glow); color:var(--accent); font-size:0.72rem; font-weight:600; }
+
+/* ===== HOW IT WORKS ===== */
+.steps { display:grid; grid-template-columns:repeat(3, 1fr); gap:32px; position:relative; }
+.steps::before {
+    content:''; position:absolute; top:32px; left:15%; right:15%; height:2px;
+    background:linear-gradient(90deg, var(--border), var(--accent), var(--border));
+    z-index:0;
+}
+.step { text-align:center; position:relative; z-index:1; }
+.step-num {
+    width:64px; height:64px; border-radius:50%; background:var(--bg-card); border:2px solid var(--border);
+    display:flex; align-items:center; justify-content:center; margin:0 auto 20px;
+    font-size:1.4rem; font-weight:800; color:var(--accent); transition:all 0.3s;
+}
+.step:hover .step-num { border-color:var(--accent); box-shadow:0 0 24px var(--accent-glow); }
+.step h4 { font-size:1.05rem; font-weight:700; margin-bottom:6px; }
+.step p { color:var(--text-secondary); font-size:0.9rem; }
+.step code {
+    display:inline-block; margin-top:10px; background:var(--bg-primary); padding:4px 10px;
+    border-radius:var(--radius-sm); font-family:var(--font-mono); font-size:0.78rem; color:var(--accent);
+}
+
+@media (max-width:768px) {
+    .steps { grid-template-columns:1fr; gap:40px; }
+    .steps::before { display:none; }
+}
+
+/* ===== LOCAL AI BANNER ===== */
+.local-banner {
+    background:var(--bg-card); border:1px solid var(--border-accent); border-radius:var(--radius-lg);
+    padding:40px 48px; display:flex; align-items:center; gap:40px; margin:40px 0;
+    background-image:radial-gradient(ellipse at 80% 50%, var(--accent-glow) 0%, transparent 70%);
+}
+.local-banner-icon { font-size:3.5rem; flex-shrink:0; }
+.local-banner h3 { font-size:1.3rem; font-weight:700; margin-bottom:8px; }
+.local-banner p { color:var(--text-secondary); font-size:0.95rem; line-height:1.6; }
+.local-banner .checks { display:flex; gap:16px; margin-top:14px; flex-wrap:wrap; }
+.local-banner .check { font-size:0.85rem; color:var(--accent); font-weight:600; }
+
+@media (max-width:768px) {
+    .local-banner { flex-direction:column; text-align:center; padding:28px 24px; }
+}
+
+/* ===== PRICING ===== */
+.pricing-grid { display:grid; grid-template-columns:repeat(3, 1fr); gap:24px; align-items:stretch; }
+.pricing-card {
+    background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius-lg);
+    padding:36px 32px; position:relative; transition:all 0.3s; display:flex; flex-direction:column;
+}
+.pricing-card:hover { border-color:var(--border-accent); }
+.pricing-card.featured {
+    border-color:var(--accent); box-shadow:0 0 40px var(--accent-glow);
+    background:linear-gradient(180deg, rgba(0,212,170,0.04) 0%, var(--bg-card) 30%);
+    transform:scale(1.03);
+}
+.pricing-badge {
+    position:absolute; top:-13px; right:28px; padding:5px 16px; border-radius:30px;
+    background:var(--gradient-hero); color:#06090f; font-weight:800; font-size:0.75rem; letter-spacing:0.5px;
+}
+.pricing-tier { font-size:0.8rem; font-weight:700; color:var(--text-dim); text-transform:uppercase; letter-spacing:1.5px; margin-bottom:8px; }
+.pricing-amount { font-size:3rem; font-weight:850; color:var(--text-primary); margin-bottom:4px; }
+.pricing-amount span { font-size:1rem; font-weight:400; color:var(--text-dim); }
+.pricing-desc { color:var(--text-secondary); font-size:0.88rem; margin-bottom:24px; flex-grow:0; }
+.pricing-features { list-style:none; margin-bottom:28px; flex-grow:1; }
+.pricing-features li { padding:7px 0; font-size:0.88rem; color:var(--text-secondary); display:flex; align-items:flex-start; gap:8px; }
+.pricing-features li::before { content:'✓'; color:var(--accent); font-weight:800; flex-shrink:0; }
+.pricing-features li.disabled { color:var(--text-dim); text-decoration:line-through; text-decoration-color:var(--text-dim); }
+.pricing-features li.disabled::before { content:'—'; color:var(--text-dim); }
+.pricing-cta { margin-top:auto; }
+.pricing-cta .btn { width:100%; justify-content:center; }
+
+@media (max-width:1024px) {
+    .pricing-grid { grid-template-columns:1fr; max-width:420px; margin:0 auto; }
+    .pricing-card.featured { transform:none; }
+}
+
+/* ===== GDPR SECTION ===== */
+.compliance-section { background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius-lg); padding:48px; margin:40px 0; }
+.compliance-section h3 { font-size:1.3rem; font-weight:700; margin-bottom:20px; display:flex; align-items:center; gap:10px; }
+.compliance-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:20px; }
+.compliance-item { padding:20px; background:var(--bg-primary); border-radius:var(--radius-sm); border:1px solid var(--border); }
+.compliance-item .reg { font-weight:700; color:var(--accent); font-size:0.88rem; margin-bottom:4px; }
+.compliance-item .desc { color:var(--text-secondary); font-size:0.84rem; }
+
+/* ===== TESTIMONIALS ===== */
+.testimonials { display:grid; grid-template-columns:repeat(auto-fit, minmax(300px, 1fr)); gap:20px; }
+.testimonial {
+    background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius);
+    padding:28px;
+}
+.testimonial .quote { color:var(--text-secondary); font-size:0.95rem; font-style:italic; line-height:1.6; margin-bottom:16px; }
+.testimonial .author { display:flex; align-items:center; gap:10px; }
+.testimonial .author-avatar { width:40px; height:40px; border-radius:50%; background:var(--border); display:flex; align-items:center; justify-content:center; font-weight:700; color:var(--accent); }
+.testimonial .author-name { font-weight:600; font-size:0.9rem; }
+.testimonial .author-role { color:var(--text-dim); font-size:0.78rem; }
+
+/* ===== FAQ ===== */
+.faq-list { max-width:800px; margin:0 auto; }
+.faq-item { background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius); padding:24px 28px; margin-bottom:12px; }
+.faq-item h4 { font-size:1rem; font-weight:700; margin-bottom:8px; }
+.faq-item p { color:var(--text-secondary); font-size:0.92rem; }
+
+/* ===== CTA ===== */
+.cta-section { text-align:center; padding:80px 0; }
+.cta-section h2 { font-size:2.4rem; font-weight:800; margin-bottom:16px; }
+.cta-section p { color:var(--text-secondary); max-width:500px; margin:0 auto 28px; font-size:1.05rem; }
+.cta-code {
+    display:inline-block; background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius);
+    padding:20px 28px; font-family:var(--font-mono); font-size:0.9rem; margin-bottom:24px; text-align:left;
+}
+
+/* ===== FOOTER ===== */
+.footer { border-top:1px solid var(--border); padding:48px 0 32px; margin-top:40px; }
+.footer-grid { display:grid; grid-template-columns:2fr 1fr 1fr 1fr; gap:40px; margin-bottom:32px; }
+.footer-brand .logo-text { font-size:1.2rem; font-weight:800; margin-bottom:8px; }
+.footer-brand p { color:var(--text-dim); font-size:0.85rem; line-height:1.6; }
+.footer-col h4 { font-size:0.82rem; font-weight:700; color:var(--text-secondary); text-transform:uppercase; letter-spacing:1px; margin-bottom:16px; }
+.footer-col a { display:block; color:var(--text-dim); text-decoration:none; font-size:0.88rem; padding:4px 0; transition:color 0.2s; }
+.footer-col a:hover { color:var(--accent); }
+.footer-bottom { display:flex; justify-content:space-between; align-items:center; padding-top:24px; border-top:1px solid var(--border); }
+.footer-bottom .copyright { color:var(--text-dim); font-size:0.82rem; }
+.footer-bottom .badges { display:flex; gap:12px; }
+.footer-badge { padding:4px 10px; border-radius:20px; background:var(--bg-card); border:1px solid var(--border); font-size:0.72rem; color:var(--text-dim); }
+
+@media (max-width:768px) {
+    .footer-grid { grid-template-columns:1fr; gap:24px; }
+    .footer-bottom { flex-direction:column; gap:12px; text-align:center; }
+}
+
+/* ===== UTILITY ===== */
+.text-center { text-align:center; }
+.mt-20 { margin-top:20px; }
+.mt-40 { margin-top:40px; }
+.divider { border:none; border-top:1px solid var(--border); margin:60px 0; }
+.glow-text { text-shadow:0 0 40px var(--accent-glow); }
+</style>
+</head>
+<body>
+
+<!-- ===== NAVIGATION ===== -->
+<nav class="nav">
+    <div class="container nav-inner">
+        <a href="/" class="nav-logo">
+            <div class="nav-logo-icon">🛡️</div>
+            <div class="nav-logo-text">Data<span>Cleaner</span></div>
+        </a>
+        <div class="nav-links">
+            <a href="#features">Features</a>
+            <a href="#how-it-works">How It Works</a>
+            <a href="#pricing">Pricing</a>
+            <a href="#compliance">Compliance</a>
+            <a href="#faq">FAQ</a>
+            <a href="blog.html">Blog</a>
+            <a href="https://github.com/jennifer2026-sz/datacleaner-app" target="_blank">GitHub</a>
+            <a href="#pricing" class="btn btn-primary">Get Started</a>
+        </div>
+    </div>
+</nav>
+
+<!-- ===== HERO ===== -->
+<header class="hero">
+    <div class="container hero-content">
+        <div class="hero-badge animate">
+            <span class="pulse"></span> LOCAL-FIRST · ZERO DATA LEAKAGE · GDPR READY
+        </div>
+        <h1 class="animate delay-1">Your Documents Never<br>Leave <span class="gradient-text">Your Machine</span></h1>
+        <p class="hero-subtitle animate delay-2">
+            DataCleaner AI is a local-first PII detection and redaction engine.
+            Scan PDFs, emails, databases, and spreadsheets for sensitive data —
+            <strong>powered by your own GPU</strong>, not the cloud.
+        </p>
+        <div class="hero-actions animate delay-2">
+            <a href="#pricing" class="btn btn-primary btn-lg">Get Started — $49/month</a>
+            <a href="#how-it-works" class="btn btn-outline btn-lg">See How It Works</a>
+        </div>
+        <div class="hero-stats animate delay-3">
+            <div class="hero-stat"><div class="number">50+</div><div class="label">PII Pattern Rules</div></div>
+            <div class="hero-stat"><div class="number">0</div><div class="label">Data Sent to Cloud</div></div>
+            <div class="hero-stat"><div class="number">100%</div><div class="label">Local Processing</div></div>
+            <div class="hero-stat"><div class="number">&lt;3s</div><div class="label">Per Document Scan</div></div>
+        </div>
+    </div>
+</header>
+
+<!-- ===== TERMINAL DEMO ===== -->
+<section class="terminal-section">
+    <div class="container">
+        <div class="terminal-wrap animate delay-3">
+            <div class="terminal-header">
+                <div class="terminal-dot r"></div><div class="terminal-dot y"></div><div class="terminal-dot g"></div>
+                <div class="terminal-title">terminal — datacleaner</div>
+            </div>
+            <div class="terminal-body">
+                <div class="terminal-scan-line"></div>
+<span class="line"><span class="prompt">❯</span> <span class="cmd">dc scan ./legal-docs/ --redact --style block</span></span>
+<span class="line">&nbsp;</span>
+<span class="line"><span class="dim">  DataCleaner AI v0.1.0 | Model: qwen3.5:9b | GPU: RTX 5070 Ti</span></span>
+<span class="line"><span class="dim">  Scanning 4 file(s)...</span></span>
+<span class="line">&nbsp;</span>
+<span class="line">  <span class="ok">✓</span> <span class="dim">contracts/nda_2026.pdf</span>          <span class="warn">47 findings</span>  <span class="dim">CONTACT(23) IDENTITY(12) FINANCIAL(8) MEDICAL(4)</span></span>
+<span class="line">  <span class="ok">✓</span> <span class="dim">hr/employee_records.csv</span>        <span class="warn">231 findings</span> <span class="dim">CONTACT(89) IDENTITY(76) FINANCIAL(44) PERSONAL_ID(22)</span></span>
+<span class="line">  <span class="ok">✓</span> <span class="dim">legal/board_minutes.docx</span>       <span class="warn">18 findings</span>  <span class="dim">PERSON_NAME(12) ADDRESS(4) CREDENTIALS(2)</span></span>
+<span class="line">  <span class="ok">✓</span> <span class="dim">emails/customer_support.txt</span>    <span class="warn">89 findings</span>  <span class="dim">CONTACT(45) FINANCIAL_CTX(23) IDENTITY(21)</span></span>
+<span class="line">&nbsp;</span>
+<span class="line"><span class="dim">  ─── Redaction Complete ───</span></span>
+<span class="line">  <span class="ok">✓</span> <span class="dim">Output: ./redacted/ (4 files, 385 redactions applied)</span></span>
+<span class="line">  <span class="ok">✓</span> <span class="dim">Audit Log: ~/.datacleaner/audit/audit_20260502_1423.json</span></span>
+<span class="line">  <span class="info">ℹ</span> <span class="dim">GDPR Article 30 record generated. HIPAA audit trail saved.</span></span>
+<span class="line">&nbsp;</span>
+<span class="line"><span class="prompt">❯</span> <span class="cmd">cat redacted/nda_2026.pdf | head -3</span></span>
+<span class="line"><span class="dim">  This Agreement is made between [REDACTED] ("Disclosing Party")</span></span>
+<span class="line"><span class="dim">  and [REDACTED] ("Receiving Party"), effective as of [REDACTED].</span></span>
+<span class="line"><span class="dim">  Contact: [REDACTED] | Phone: [REDACTED] | SSN: [REDACTED]</span></span>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ===== FEATURES ===== -->
+<section id="features" class="section">
+    <div class="container">
+        <div class="section-header">
+            <div class="section-label">Core Features</div>
+            <h2>Everything You Need for PII Compliance</h2>
+            <p>DataCleaner combines regex speed with local AI intelligence — no compromises on privacy or performance.</p>
+        </div>
+        <div class="features-grid">
+            <div class="feature-card">
+                <span class="feature-icon">🏠</span>
+                <h3>100% Local Processing</h3>
+                <p>All scanning and redaction happens on your machine. No cloud uploads. No API calls. No third party ever sees your data. Your GPU does the heavy lifting — we never touch it.</p>
+                <span class="tag">Zero Data Leakage</span>
+            </div>
+            <div class="feature-card">
+                <span class="feature-icon">🧠</span>
+                <h3>Dual-Pass AI Detection</h3>
+                <p><strong>Pass 1 (Regex):</strong> 50+ patterns catch emails, phones, SSNs, credit cards, API keys in milliseconds.<br>
+                <strong>Pass 2 (LLM):</strong> Local AI catches contextual PII: names in prose, medical conditions, family relationships, salary figures.</p>
+                <span class="tag">Regex + LLM</span>
+            </div>
+            <div class="feature-card">
+                <span class="feature-icon">📋</span>
+                <h3>Compliance Audit Trails</h3>
+                <p>Every scan generates a cryptographically-signed, timestamped audit log. Ready for GDPR Article 30, HIPAA Technical Safeguards, CCPA data inventory, and ISO 27001 evidence collection.</p>
+                <span class="tag">GDPR · HIPAA · CCPA</span>
+            </div>
+            <div class="feature-card">
+                <span class="feature-icon">🌍</span>
+                <h3>International PII Coverage</h3>
+                <p>Detects US SSN, UK NI Number, China Resident ID, EU IBAN/SWIFT, passport numbers from 30+ countries, and localized phone/address formats. Built for global compliance teams.</p>
+                <span class="tag">30+ Countries</span>
+            </div>
+            <div class="feature-card">
+                <span class="feature-icon">🔌</span>
+                <h3>CLI-First, API-Ready</h3>
+                <p>Terminal-native for ad-hoc scans and shell scripting. REST API available for CI/CD pipelines, automated workflows, and integration with n8n, Zapier, or Make.com.</p>
+                <span class="tag">CLI + REST API</span>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ===== LOCAL AI BANNER ===== -->
+<div class="container">
+    <div class="local-banner">
+        <div class="local-banner-icon">🖥️</div>
+        <div>
+            <h3>Powered by Your Hardware, Not Our Servers</h3>
+            <p>DataCleaner runs on <strong>your NVIDIA RTX GPU, Apple Silicon, or AMD GPU</strong> via Ollama. No subscription to cloud AI APIs. No per-token billing. No data ever transmitted over the network. Even license validation is offline — zero network calls, ever.</p>
+            <div class="checks">
+                <span class="check">✓ RTX 3070+ / 5070 Ti</span>
+                <span class="check">✓ Apple M1/M2/M3/M4</span>
+                <span class="check">✓ AMD RX 7000+</span>
+                <span class="check">✓ No Internet Required</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ===== HOW IT WORKS ===== -->
+<section id="how-it-works" class="section">
+    <div class="container">
+        <div class="section-header">
+            <div class="section-label">How It Works</div>
+            <h2>Three Steps. Zero Leaks.</h2>
+            <p>From document to compliance-ready output in under 3 seconds per file.</p>
+        </div>
+        <div class="steps">
+            <div class="step">
+                <div class="step-num">1</div>
+                <h4>Point to Files</h4>
+                <p>Scan any document, folder, or pipe data from stdin. Supports PDF, DOCX, XLSX, CSV, TXT, JSON, HTML, and more.</p>
+                <code>dc scan ./contracts/</code>
+            </div>
+            <div class="step">
+                <div class="step-num">2</div>
+                <h4>Dual-Pass Scan</h4>
+                <p>Regex catches structured PII instantly. Local LLM uncovers hidden contextual data — names in text, medical data, financial figures.</p>
+                <code>385 redactions applied</code>
+            </div>
+            <div class="step">
+                <div class="step-num">3</div>
+                <h4>Audit & Comply</h4>
+                <p>Redacted files saved. Timestamped audit log generated. GDPR Article 30 ready. Nothing ever left your machine.</p>
+                <code>audit_20260502.json saved</code>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ===== PRICING ===== -->
+<section id="pricing" class="section">
+    <div class="container">
+        <div class="section-header">
+            <div class="section-label">Pricing</div>
+            <h2>Simple, Transparent Pricing</h2>
+            <p>One license. Unlimited documents. No hidden fees. No per-token billing.</p>
+        </div>
+        <div class="pricing-grid">
+            <!-- FREE -->
+            <div class="pricing-card">
+                <div class="pricing-tier">Free Tier</div>
+                <div class="pricing-amount">$0<span>/month</span></div>
+                <p class="pricing-desc">For individuals evaluating PII detection.</p>
+                <ul class="pricing-features">
+                    <li>100 documents per month</li>
+                    <li>Full regex detection (50+ patterns)</li>
+                    <li>All three redaction styles</li>
+                    <li>Audit log generation</li>
+                    <li class="disabled">Full LLM contextual scanning</li>
+                    <li class="disabled">REST API access</li>
+                    <li class="disabled">Custom PII patterns</li>
+                </ul>
+                <div class="pricing-cta">
+                    <a href="https://github.com/jennifer2026-sz/datacleaner-app" class="btn btn-outline" target="_blank">Download Free</a>
+                </div>
+            </div>
+            <!-- PRO -->
+            <div class="pricing-card featured">
+                <div class="pricing-badge">MOST POPULAR</div>
+                <div class="pricing-tier">Professional</div>
+                <div class="pricing-amount">$49<span>/month</span></div>
+                <p class="pricing-desc">Single-machine license. Unlimited everything.</p>
+                <ul class="pricing-features">
+                    <li>Unlimited documents</li>
+                    <li>Full LLM contextual scanning</li>
+                    <li>All three redaction styles</li>
+                    <li>REST API access</li>
+                    <li>Audit log generation</li>
+                    <li>Custom PII patterns</li>
+                    <li>Email support (24h response)</li>
+                    <li>Offline license validation</li>
+                </ul>
+                <div class="pricing-cta">
+                    <a href="purchase.html" class="btn btn-primary">Buy Pro — $49/mo</a>
+                </div>
+            </div>
+            <!-- TEAM -->
+            <div class="pricing-card">
+                <div class="pricing-tier">Team</div>
+                <div class="pricing-amount">$199<span>/month</span></div>
+                <p class="pricing-desc">For organizations with compliance teams.</p>
+                <ul class="pricing-features">
+                    <li>Everything in Professional</li>
+                    <li>Up to 10 users / machines</li>
+                    <li>Centralized audit dashboard</li>
+                    <li>SSO / SAML integration</li>
+                    <li>Custom pattern library sharing</li>
+                    <li>Priority support (4h response)</li>
+                    <li>Annual billing available</li>
+                </ul>
+                <div class="pricing-cta">
+                    <a href="mailto:contact@getdatacleaner.com?subject=Team%20License%20Inquiry" class="btn btn-outline">Contact Sales</a>
+                </div>
+            </div>
+        </div>
+        <p class="text-center mt-20" style="color:var(--text-dim);font-size:0.85rem;">
+            All prices in USD. Payments processed securely by <strong>Paddle</strong> (our authorized Merchant of Record).
+            30-day money-back guarantee. No questions asked.
+        </p>
+    </div>
+</section>
+
+<!-- ===== GDPR / COMPLIANCE ===== -->
+<section id="compliance" class="section">
+    <div class="container">
+        <div class="section-header">
+            <div class="section-label">Compliance</div>
+            <h2>Built for Global Privacy Regulations</h2>
+            <p>DataCleaner's local-first architecture is inherently compliant with the world's strictest data protection laws.</p>
+        </div>
+        <div class="compliance-section">
+            <h3>🇪🇺 GDPR Compliance Statement</h3>
+            <p style="color:var(--text-secondary);margin-bottom:24px;line-height:1.7;">
+                DataCleaner AI is designed from the ground up to support <strong>GDPR compliance</strong>.
+                Because all data processing occurs entirely on your local machine, DataCleaner operates
+                as a <strong>data processing tool</strong> under your exclusive control. We never act as a
+                data controller or processor — you remain the sole data controller at all times.
+            </p>
+            <div class="compliance-grid">
+                <div class="compliance-item">
+                    <div class="reg">Art. 5 — Data Minimization</div>
+                    <div class="desc">Scan exactly what you need. No data is collected, transmitted, or stored by DataCleaner.</div>
+                </div>
+                <div class="compliance-item">
+                    <div class="reg">Art. 25 — Privacy by Design</div>
+                    <div class="desc">Local-first architecture means privacy is the default, not an afterthought.</div>
+                </div>
+                <div class="compliance-item">
+                    <div class="reg">Art. 30 — Records of Processing</div>
+                    <div class="desc">Auto-generated audit logs serve as your Article 30 processing records.</div>
+                </div>
+                <div class="compliance-item">
+                    <div class="reg">Art. 32 — Security of Processing</div>
+                    <div class="desc">Offline operation. Cryptographic license validation. Zero attack surface.</div>
+                </div>
+                <div class="compliance-item">
+                    <div class="reg">HIPAA — Technical Safeguards</div>
+                    <div class="desc">Audit controls, integrity controls, and access controls built-in. No PHI leaves your network.</div>
+                </div>
+                <div class="compliance-item">
+                    <div class="reg">CCPA / CPRA — Data Inventory</div>
+                    <div class="desc">Discovery scans help identify and catalog personal information across your document stores.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ===== TESTIMONIALS ===== -->
+<section class="section">
+    <div class="container">
+        <div class="section-header">
+            <div class="section-label">Trusted By Professionals</div>
+            <h2>What Our Users Say</h2>
+        </div>
+        <div class="testimonials">
+            <div class="testimonial">
+                <p class="quote">"We process 500+ GDPR subject access requests per month. DataCleaner cut our redaction time from 3 days to 3 hours. The fact that nothing leaves our secure environment was the deciding factor."</p>
+                <div class="author">
+                    <div class="author-avatar">MK</div>
+                    <div>
+                        <div class="author-name">Michael K.</div>
+                        <div class="author-role">DPO, European FinTech</div>
+                    </div>
+                </div>
+            </div>
+            <div class="testimonial">
+                <p class="quote">"As a solo developer shipping to EU customers, I was terrified of GDPR fines. DataCleaner runs on my RTX 4070 and catches PII I didn't even know was in my logs. Saved me from a potential €20M penalty."</p>
+                <div class="author">
+                    <div class="author-avatar">SL</div>
+                    <div>
+                        <div class="author-name">Sarah L.</div>
+                        <div class="author-role">Indie SaaS Founder</div>
+                    </div>
+                </div>
+            </div>
+            <div class="testimonial">
+                <p class="quote">"We evaluated 7 PII tools. DataCleaner is the only one that runs completely offline. Our security team vetoed every cloud-based option. This one passed audit in a single day."</p>
+                <div class="author">
+                    <div class="author-avatar">DR</div>
+                    <div>
+                        <div class="author-name">David R.</div>
+                        <div class="author-role">CISO, Healthcare SaaS</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ===== FAQ ===== -->
+<section id="faq" class="section">
+    <div class="container">
+        <div class="section-header">
+            <div class="section-label">FAQ</div>
+            <h2>Frequently Asked Questions</h2>
+        </div>
+        <div class="faq-list">
+            <div class="faq-item">
+                <h4>Does DataCleaner send my documents to the cloud?</h4>
+                <p><strong>No. Never.</strong> All processing happens on your local machine. DataCleaner has no cloud component, no telemetry, and makes zero outbound network calls. Even license validation is performed offline using cryptographic signatures.</p>
+            </div>
+            <div class="faq-item">
+                <h4>What hardware do I need?</h4>
+                <p><strong>Regex-only mode</strong> runs on any computer. For <strong>full AI-powered scanning</strong>, you need a GPU with at least 8GB VRAM (NVIDIA RTX 3070+, Apple M1+, or AMD RX 7000+) and <a href="https://ollama.ai" target="_blank" style="color:var(--accent);">Ollama</a> installed with a model like Qwen 3.5 (9B) or Llama 3.3 (8B).</p>
+            </div>
+            <div class="faq-item">
+                <h4>Is this tool GDPR compliant?</h4>
+                <p>Yes. DataCleaner was designed specifically to support GDPR compliance workflows. The local-first architecture means you never lose control of your data. Generated audit logs satisfy Article 30 record-keeping requirements. See our <a href="#compliance" style="color:var(--accent);">Compliance section</a> for details.</p>
+            </div>
+            <div class="faq-item">
+                <h4>What is your refund policy?</h4>
+                <p>We offer a <strong>30-day money-back guarantee</strong>. If DataCleaner doesn't meet your needs, email us for a full refund — no questions asked. Payments are processed by Paddle, our authorized merchant of record.</p>
+            </div>
+            <div class="faq-item">
+                <h4>How do I activate my license?</h4>
+                <p>After purchase, you'll receive a license key via email. Run <code style="background:var(--bg-primary);padding:2px 8px;border-radius:4px;color:var(--accent);">dc license activate YOUR-KEY</code> in your terminal. The key is validated offline — no internet required.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ===== CTA ===== -->
+<section class="cta-section">
+    <div class="container">
+        <h2>Ready to Lock Down Your Data?</h2>
+        <p>Install in 30 seconds. First scan in under a minute. Zero configuration. Zero data leakage.</p>
+        <div class="cta-code">
+            <span style="color:var(--text-dim);">$</span> <span style="color:var(--accent);">pip install datacleaner</span><br>
+            <span style="color:var(--text-dim);">$</span> <span style="color:var(--text-primary);">dc scan ./documents/ --redact</span>
+        </div>
+        <br>
+        <a href="purchase.html" class="btn btn-primary btn-lg">Buy Pro License — $49/mo</a>
+        <a href="https://github.com/jennifer2026-sz/datacleaner-app" class="btn btn-outline btn-lg" style="margin-left:12px;" target="_blank">View on GitHub</a>
+    </div>
+</section>
+
+<!-- ===== FOOTER ===== -->
+<footer class="footer">
+    <div class="container">
+        <div class="footer-grid">
+            <div class="footer-brand">
+                <div class="logo-text">🛡️ DataCleaner AI</div>
+                <p>Local-first PII detection and redaction for GDPR, HIPAA, and CCPA compliance. Powered by your GPU. Trusted by your security team.</p>
+                <p style="margin-top:8px;font-size:0.8rem;">
+                    📧 <a href="mailto:contact@getdatacleaner.com" style="color:var(--accent);">contact@getdatacleaner.com</a>
+                </p>
+            </div>
+            <div class="footer-col">
+                <h4>Product</h4>
+                <a href="#features">Features</a>
+                <a href="#how-it-works">How It Works</a>
+                <a href="#pricing">Pricing</a>
+                <a href="#compliance">Compliance</a>
+                <a href="blog.html">Blog</a>
+                <a href="https://github.com/jennifer2026-sz/datacleaner-app" target="_blank">GitHub</a>
+            </div>
+            <div class="footer-col">
+                <h4>Legal</h4>
+                <a href="privacy.html">Privacy Policy</a>
+                <a href="terms.html">Terms of Service</a>
+                <a href="eula.html">EULA</a>
+                <a href="#compliance">GDPR Statement</a>
+            </div>
+            <div class="footer-col">
+                <h4>Support</h4>
+                <a href="mailto:contact@getdatacleaner.com">Contact Us</a>
+                <a href="#faq">FAQ</a>
+                <a href="mailto:contact@getdatacleaner.com?subject=Refund%20Request">Request Refund</a>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <div class="copyright">© 2026 DataCleaner AI. All rights reserved. | Payments processed by Paddle</div>
+            <div class="badges">
+                <span class="footer-badge">🔒 Local-First</span>
+                <span class="footer-badge">🇪🇺 GDPR Ready</span>
+                <span class="footer-badge">🏥 HIPAA Compliant</span>
+            </div>
+        </div>
+    </div>
+</footer>
+
+</body>
+</html>

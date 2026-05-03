@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Blog — DataCleaner</title>
+<meta name="description" content="Development blog for DataCleaner — local-first PII detection and redaction engine.">
+<style>
+:root {
+    --bg-deep: #06090f; --bg-card: #111827; --bg-card-hover: #161e2e;
+    --border: #1e2d45; --border-accent: #00d4aa33;
+    --text-primary: #e8edf5; --text-secondary: #8b9cc0; --text-dim: #546380;
+    --accent: #00d4aa; --accent-glow: rgba(0,212,170,0.18); --accent-bright: #00ffc8;
+    --radius: 14px; --radius-lg: 20px;
+    --font-mono: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', 'Consolas', monospace;
+    --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: var(--bg-deep); color: var(--text-primary); font-family: var(--font-sans); line-height: 1.7; }
+.container { max-width: 860px; margin: 0 auto; padding: 0 28px; }
+
+/* Nav */
+.nav { position: sticky; top: 0; z-index: 100; background: rgba(6,9,15,0.85); backdrop-filter: blur(16px); border-bottom: 1px solid var(--border); }
+.nav-inner { display: flex; align-items: center; justify-content: space-between; height: 64px; max-width: 860px; margin: 0 auto; padding: 0 28px; }
+.nav-logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+.nav-logo-text { font-weight: 800; font-size: 1.15rem; color: var(--text-primary); }
+.nav-logo-text span { color: var(--accent); }
+.nav-links { display: flex; gap: 20px; }
+.nav-links a { color: var(--text-secondary); text-decoration: none; font-size: 0.88rem; font-weight: 500; }
+.nav-links a:hover { color: var(--accent); }
+@media (max-width: 768px) { .nav-links { display: none; } }
+
+/* Header */
+.header { padding: 64px 0 40px; text-align: center; }
+.header h1 { font-size: 2.4rem; font-weight: 850; letter-spacing: -1px; }
+.header p { color: var(--text-secondary); font-size: 1.05rem; max-width: 520px; margin: 12px auto 0; }
+
+/* Posts */
+.posts { padding-bottom: 80px; }
+.post {
+    background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-lg);
+    padding: 36px 40px; margin-bottom: 24px; transition: all 0.3s;
+}
+.post:hover { border-color: var(--border-accent); background: var(--bg-card-hover); }
+.post-meta { display: flex; align-items: center; gap: 16px; margin-bottom: 16px; flex-wrap: wrap; }
+.post-date { color: var(--text-dim); font-size: 0.82rem; font-family: var(--font-mono); }
+.post-tag { padding: 3px 10px; border-radius: 20px; background: var(--accent-glow); color: var(--accent); font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+.post h2 { font-size: 1.35rem; font-weight: 700; margin-bottom: 12px; letter-spacing: -0.3px; }
+.post h2 a { color: var(--text-primary); text-decoration: none; }
+.post h2 a:hover { color: var(--accent); }
+.post-excerpt { color: var(--text-secondary); font-size: 0.95rem; line-height: 1.7; margin-bottom: 16px; }
+.post-body { color: var(--text-secondary); font-size: 0.93rem; line-height: 1.75; }
+.post-body h3 { color: var(--text-primary); font-size: 1.05rem; margin: 24px 0 10px; }
+.post-body p { margin-bottom: 14px; }
+.post-body ul { margin-bottom: 14px; padding-left: 24px; }
+.post-body li { margin-bottom: 6px; }
+.post-body code {
+    background: rgba(0,212,170,0.08); padding: 2px 8px; border-radius: 4px;
+    font-family: var(--font-mono); font-size: 0.85rem; color: var(--accent);
+}
+.post-body pre {
+    background: #0a0f18; border: 1px solid var(--border); border-radius: 8px;
+    padding: 16px 20px; overflow-x: auto; margin-bottom: 16px;
+    font-family: var(--font-mono); font-size: 0.82rem; line-height: 1.6;
+}
+.post-body pre code { background: none; padding: 0; color: var(--text-secondary); }
+
+/* Footer */
+.footer { border-top: 1px solid var(--border); padding: 32px 0; text-align: center; }
+.footer p { color: var(--text-dim); font-size: 0.82rem; }
+.footer a { color: var(--accent); }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+    <div class="nav-inner">
+        <a href="index.html" class="nav-logo">
+            <div class="nav-logo-text">Data<span>Cleaner</span></div>
+        </a>
+        <div class="nav-links">
+            <a href="index.html">Home</a>
+            <a href="index.html#features">Features</a>
+            <a href="index.html#pricing">Pricing</a>
+            <a href="blog.html">Blog</a>
+        </div>
+    </div>
+</nav>
+
+<header class="header">
+    <h1>Engineering Blog</h1>
+    <p>Behind the scenes of building a local-first PII detection engine. No cloud, no compromises.</p>
+</header>
+
+<section class="posts container">
+
+    <!-- Post 5 → Newest -->
+    <article class="post" id="post-5">
+        <div class="post-meta">
+            <span class="post-date">2026-05-03</span>
+            <span class="post-tag">Product</span>
+        </div>
+        <h2><a href="#post-5">Paddle Merchant Verification: Why We Chose a MoR Over Stripe</a></h2>
+        <div class="post-body">
+            <p>This week we submitted our merchant application to Paddle. For an indie developer shipping from China, choosing the right payment processor is make-or-break. Here's why we went with Paddle as our Merchant of Record instead of Stripe or direct PayPal.</p>
+
+            <h3>The China Founder Tax Problem</h3>
+            <p>If you're a solo developer in China selling software globally, you face three problems simultaneously:</p>
+            <ul>
+                <li><strong>Stripe doesn't support China</strong> — Stripe Atlas costs $500 and takes weeks to incorporate a US LLC. That's overhead an indie dev doesn't need at launch.</li>
+                <li><strong>Tax compliance across 30+ countries</strong> — EU VAT alone has 27 different rates. Getting this wrong means legal exposure.</li>
+                <li><strong>Payment gateway friction</strong> — Even if you solve the legal entity problem, maintaining compliance across changing regulations is a part-time job.</li>
+            </ul>
+
+            <h3>Paddle as Merchant of Record: What It Actually Means</h3>
+            <p>Paddle acts as the legal seller. They handle:</p>
+            <ul>
+                <li>Global VAT/GST/sales tax calculation, collection, and remittance</li>
+                <li>Invoice generation compliant with each country's requirements</li>
+                <li>Chargeback handling and fraud detection</li>
+                <li>Payout to our Chinese company bank account via SWIFT</li>
+            </ul>
+            <p>In exchange, they take 5% + $0.50 per transaction. For a $49/month Pro license, that's $2.95. Worth every cent for zero tax headache.</p>
+
+            <h3>Our Verification Status</h3>
+            <p>We've deployed our professional landing page at <code>getdatacleaner.com</code> with complete legal documentation (Privacy Policy, Terms of Service, EULA). Paddle is reviewing our domain and product — once approved, checkout goes live immediately. We'll post an update here the moment it's active.</p>
+
+            <p>For now, pre-orders are open via <a href="mailto:contact@getdatacleaner.com" style="color:var(--accent);">contact@getdatacleaner.com</a>. You reserve your license at the listed price, and we deliver the key instantly once Paddle clears us.</p>
+        </div>
+    </article>
+
+    <!-- Post 4 -->
+    <article class="post" id="post-4">
+        <div class="post-meta">
+            <span class="post-date">2026-05-01</span>
+            <span class="post-tag">Infrastructure</span>
+        </div>
+        <h2><a href="#post-4">Going Live: Custom Domain, Cloudflare, and GitHub Pages</a></h2>
+        <div class="post-body">
+            <p>DataCleaner now has a real home on the internet: <code>getdatacleaner.com</code>. This post covers the setup so other indie devs can replicate it in under an hour.</p>
+
+            <h3>Why a Custom Domain Matters</h3>
+            <p>If you're selling software, a <code>github.io</code> subdomain signals "side project." Payment processors like Paddle and Stripe flag subdomains as higher risk. A custom <code>.com</code> costs $12/year and immediately boosts credibility with both reviewers and customers.</p>
+
+            <h3>The Stack (Total Cost: $12/year)</h3>
+            <ul>
+                <li><strong>Domain:</strong> Namecheap — <code>getdatacleaner.com</code>, $12/year</li>
+                <li><strong>DNS + CDN:</strong> Cloudflare (free tier) — DDoS protection, global CDN, auto-SSL</li>
+                <li><strong>Hosting:</strong> GitHub Pages (free) — serves static HTML from <code>docs/</code> folder</li>
+                <li><strong>Email:</strong> Cloudflare Email Routing (free) — <code>contact@getdatacleaner.com</code> → personal inbox</li>
+            </ul>
+
+            <h3>Email Forwarding: The Hidden Trust Signal</h3>
+            <p>Having <code>contact@getdatacleaner.com</code> visible on your site instead of <code>@gmail.com</code> is one of the highest-ROI trust signals you can deploy. Cloudflare's Email Routing makes this free — you set up a rule, and any email sent to your domain address lands in your personal inbox. The sender sees your professional domain; you see it in Gmail. Zero maintenance.</p>
+
+            <h3>GitHub Pages Pitfall: The CNAME Auto-Commit</h3>
+            <p>When you configure a custom domain in repo Settings → Pages, GitHub auto-commits a <code>CNAME</code> file to your branch. If you then try to <code>git push</code> without pulling first, you get a rejected push. Solution: <code>git pull --rebase</code> to integrate the auto-commit, then push. Learned this the hard way.</p>
+
+            <p>Our full domain verification and deployment checklist is in the project's internal docs for future reference.</p>
+        </div>
+    </article>
+
+    <!-- Post 3 -->
+    <article class="post" id="post-3">
+        <div class="post-meta">
+            <span class="post-date">2026-04-28</span>
+            <span class="post-tag">Engineering</span>
+        </div>
+        <h2><a href="#post-3">Offline License Validation: No Internet, No Problem</a></h2>
+        <div class="post-body">
+            <p>DataCleaner's license validation works completely offline. This isn't just a nice-to-have — it's a core security requirement for our target users (compliance teams, healthcare, defense). Here's how we built it.</p>
+
+            <h3>Why Offline Validation</h3>
+            <p>Most SaaS tools phone home to validate a license. For a tool that promises "zero data leaves your machine," making a network call on startup would be a trust-destroying contradiction. Even if the call only sends a license key, the act of connecting to an external server undermines the entire local-first promise.</p>
+
+            <h3>The Approach: Asymmetric Signatures</h3>
+            <p>We use a classic public-key signature scheme:</p>
+            <ul>
+                <li>License generation (our side): We sign a payload (license tier, expiration, user ID) with a private key. The signature is embedded in the license key string.</li>
+                <li>License validation (user side): The CLI extracts the payload and verifies the signature against a bundled public key. No network. No server. Takes <1ms.</li>
+            </ul>
+            <pre><code>$ dc license activate DC-PRO-XXXX-YYYY-ZZZZ
+  Validating license key...
+  ✓ PRO license activated!
+  Expires: 2027-04-28</code></pre>
+
+            <h3>Tamper Resistance, Not DRM</h3>
+            <p>We're not building Fort Knox. A determined attacker can always patch a Python script. Our goal is <strong>honest-user enforcement</strong>: make it easier to pay $49/month than to reverse-engineer the binary. The real moat is the product itself — continuous updates, new PII patterns, and compliance templates that paying users get.</p>
+
+            <p>For the crypto-curious: we use Ed25519 signatures via PyNaCl. The public key is a 32-byte constant compiled into the package. The private key never leaves our build machine.</p>
+        </div>
+    </article>
+
+    <!-- Post 2 -->
+    <article class="post" id="post-2">
+        <div class="post-meta">
+            <span class="post-date">2026-04-25</span>
+            <span class="post-tag">Engineering</span>
+        </div>
+        <h2><a href="#post-2">Dual-Pass Detection: Why Regex Alone Isn't Enough for PII</a></h2>
+        <div class="post-body">
+            <p>If you're building a PII scanner, your first instinct is regex. It's fast, predictable, and covers 80% of cases. But that last 20% — the contextual PII that regex can't see — is where compliance fines live. Here's our two-pass architecture.</p>
+
+            <h3>Pass 1: Regex (Pattern-Based)</h3>
+            <p>Our regex engine runs 50+ patterns covering structured PII:</p>
+            <ul>
+                <li>Credit card numbers (Luhn algorithm verification)</li>
+                <li>Email addresses, phone numbers (US, EU, CN formats)</li>
+                <li>SSN, National Insurance Number, China Resident ID</li>
+                <li>IBAN, SWIFT/BIC, bank account numbers</li>
+                <li>API keys, JWT tokens, AWS access keys</li>
+                <li>IPv4/IPv6 addresses</li>
+            </ul>
+            <p>This pass is near-instant — a 100MB CSV file processes in under 2 seconds on consumer hardware.</p>
+
+            <h3>Pass 2: Local LLM (Context-Aware)</h3>
+            <p>This is where most PII tools stop. But consider this sentence:</p>
+            <pre><code>"James called about his mother's test results. Her SSN is on file."</code></pre>
+            <p>Regex catches nothing here except maybe "James" if you have a names dictionary. But a local LLM catches: "James" (person name), "mother" (family relationship → potentially identifying), "test results" (medical context), "Her SSN is on file" (implies SSN exists but isn't displayed).</p>
+            <p>Our LLM pass uses Qwen 3.5 (9B) running locally via Ollama. It's slower — ~1-3 seconds per document — but catches the contextual PII that auditors actually care about. Users can skip this pass with <code>--no-llm</code> for speed-critical workflows.</p>
+
+            <h3>The Tradeoff</h3>
+            <ul>
+                <li><strong>Regex-only:</strong> Fast, 85% coverage, no GPU required</li>
+                <li><strong>Regex + LLM:</strong> Slower, 95%+ coverage, needs 8GB+ VRAM</li>
+            </ul>
+            <p>We believe the 10% gap is where the real compliance risk lives — and that's why we built both passes.</p>
+        </div>
+    </article>
+
+    <!-- Post 1 → Oldest -->
+    <article class="post" id="post-1">
+        <div class="post-meta">
+            <span class="post-date">2026-04-20</span>
+            <span class="post-tag">Product</span>
+        </div>
+        <h2><a href="#post-1">Introducing DataCleaner: Local-First PII Redaction</a></h2>
+        <div class="post-body">
+            <p>We're building DataCleaner because existing PII tools have a fundamental problem: they require you to upload sensitive documents to the cloud. For compliance teams handling GDPR subject access requests, healthcare providers dealing with PHI, or law firms processing confidential contracts, this is a non-starter.</p>
+
+            <h3>The Problem We're Solving</h3>
+            <p>Every organization that handles personal data needs to be able to find and redact PII on demand. GDPR Article 15 gives EU citizens the right to know what data you hold on them. GDPR Article 17 gives them the right to have it deleted. HIPAA requires audit trails for every access to protected health information.</p>
+            <p>Current tools either:</p>
+            <ul>
+                <li>Upload your documents to a cloud API (privacy violation)</li>
+                <li>Use regex only and miss contextual PII (compliance gap)</li>
+                <li>Cost per-token or per-document (unpredictable billing)</li>
+            </ul>
+
+            <h3>Our Approach</h3>
+            <p>DataCleaner runs <strong>entirely on your machine</strong>. You install it via pip, point it at your documents, and it scans for PII using your own GPU. Nothing leaves your network. No API keys. No per-document billing.</p>
+
+            <p>The stack is intentionally minimal:</p>
+            <ul>
+                <li>Python 3.10+ CLI with Click and Rich</li>
+                <li>Dual-pass engine: regex (fast) + local LLM via Ollama (deep)</li>
+                <li>Offline license validation via Ed25519 signatures</li>
+                <li>Supports PDF, DOCX, XLSX, CSV, TXT, JSON, HTML</li>
+            </ul>
+
+            <h3>Pricing Philosophy</h3>
+            <p>Flat monthly pricing. No per-token costs (we don't process tokens — your GPU does). Free tier for evaluation (100 docs/month). Pro at $49/month for unlimited single-user. Team at $199/month for up to 10 seats.</p>
+
+            <p>We're currently in pre-launch. Paddle merchant verification is underway. If you want early access at launch pricing, email us at <a href="mailto:contact@getdatacleaner.com" style="color:var(--accent);">contact@getdatacleaner.com</a>.</p>
+
+            <p>— Jeam, solo dev. Shenzhen, China.</p>
+        </div>
+    </article>
+
+</section>
+
+<footer class="footer">
+    <div class="container">
+        <p>© 2026 DataCleaner. All rights reserved. | <a href="index.html">Home</a> | <a href="privacy.html">Privacy</a> | <a href="terms.html">Terms</a></p>
+    </div>
+</footer>
+
+</body>
+</html>

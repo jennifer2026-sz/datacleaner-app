@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Purchase — DataCleaner</title>
+    <style>
+        :root {
+            --bg-deep: #06090f; --bg-card: #111827; --border: #1e2d45;
+            --text-primary: #e8edf5; --text-secondary: #8b9cc0; --text-dim: #546380;
+            --accent: #00d4aa; --accent-glow: rgba(0,212,170,0.18);
+            --radius: 14px; --radius-lg: 20px;
+            --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: var(--bg-deep); color: var(--text-primary); font-family: var(--font-sans); line-height: 1.65; }
+        .container { max-width: 680px; margin: 0 auto; padding: 80px 28px; text-align: center; }
+        .card {
+            background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-lg);
+            padding: 48px 40px; margin-top: 32px;
+        }
+        h1 { font-size: 2rem; font-weight: 800; margin-bottom: 12px; }
+        .accent { color: var(--accent); }
+        p { color: var(--text-secondary); font-size: 1.05rem; margin-bottom: 20px; }
+        .pulse-badge {
+            display: inline-flex; align-items: center; gap: 8px;
+            padding: 8px 20px; border-radius: 30px; background: var(--accent-glow);
+            border: 1px solid rgba(0,212,170,0.2); color: var(--accent);
+            font-size: 0.85rem; font-weight: 600; margin-bottom: 28px;
+        }
+        @keyframes glow { 0%,100% { box-shadow:0 0 20px var(--accent-glow); } 50% { box-shadow:0 0 40px rgba(0,212,170,0.4); } }
+        .pulse-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); animation: glow 2s infinite; }
+        .btn {
+            display: inline-block; padding: 14px 32px; border-radius: 12px; font-weight: 700; font-size: 1rem;
+            text-decoration: none; transition: all 0.25s; margin: 6px;
+        }
+        .btn-primary { background: var(--accent); color: #06090f; }
+        .btn-primary:hover { box-shadow: 0 0 30px var(--accent-glow); transform: translateY(-1px); }
+        .btn-outline { border: 1.5px solid var(--border); color: var(--text-primary); background: transparent; }
+        .btn-outline:hover { border-color: var(--accent); color: var(--accent); }
+        .info-box {
+            background: rgba(0,212,170,0.04); border: 1px solid var(--border); border-radius: var(--radius);
+            padding: 20px 24px; margin-top: 28px; text-align: left;
+        }
+        .info-box h3 { font-size: 0.9rem; color: var(--accent); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px; }
+        .info-box p { font-size: 0.88rem; margin-bottom: 6px; }
+        .back { display: inline-block; color: var(--text-dim); text-decoration: none; font-size: 0.9rem; margin-bottom: 24px; }
+        .back:hover { color: var(--accent); }
+    </style>
+</head>
+<body>
+<div class="container">
+    <a href="index.html" class="back">← Back to DataCleaner</a>
+
+    <h1>DataCleaner <span class="accent">License</span></h1>
+
+    <div class="card">
+        <div class="pulse-badge">
+            <span class="pulse-dot"></span> Payment Processing — Verification In Progress
+        </div>
+
+        <h2 style="font-size:1.3rem;margin-bottom:16px;">Paddle Merchant Verification Underway</h2>
+        <p>
+            We are currently undergoing our Merchant of Record verification with <strong>Paddle</strong>,
+            our authorized payment processor. This process ensures full compliance with global tax
+            regulations (VAT/GST/sales tax) and protects your purchase.
+        </p>
+        <p>
+            Once verified — typically within 1–2 weeks — license purchases will be available instantly
+            through Paddle's secure checkout.
+        </p>
+
+        <div style="margin-top:32px;">
+            <a href="mailto:contact@getdatacleaner.com?subject=Pre-order%20DataCleaner%20Pro%20License" class="btn btn-primary">Pre-order Pro — $49/mo</a>
+            <a href="mailto:contact@getdatacleaner.com?subject=Team%20License%20Inquiry" class="btn btn-outline">Team Inquiry</a>
+        </div>
+
+        <div class="info-box">
+            <h3>What Happens Next</h3>
+            <p>1. Email us to reserve your license at the listed price.</p>
+            <p>2. We'll notify you the moment Paddle checkout goes live.</p>
+            <p>3. Your license key will be delivered via email immediately after payment.</p>
+            <p>4. Activation is offline — no internet required after setup.</p>
+        </div>
+
+        <div class="info-box" style="margin-top:16px;">
+            <h3>Payment Security</h3>
+            <p>All payments will be processed by <strong>Paddle.com</strong> (our Merchant of Record).</p>
+            <p>Paddle handles VAT, GST, and sales tax globally. Your card is never processed by us.</p>
+            <p>We offer a <strong>30-day money-back guarantee</strong> on all licenses.</p>
+        </div>
+    </div>
+
+    <p style="margin-top:32px;font-size:0.85rem;color:var(--text-dim);">
+        Questions? <a href="mailto:contact@getdatacleaner.com" style="color:var(--accent);">contact@getdatacleaner.com</a>
+    </p>
+</div>
+</body>
+</html>

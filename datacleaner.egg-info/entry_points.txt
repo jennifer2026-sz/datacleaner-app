@@ -1,0 +1,3 @@
+[console_scripts]
+datacleaner = datacleaner.cli:main
+dc = datacleaner.cli:main
