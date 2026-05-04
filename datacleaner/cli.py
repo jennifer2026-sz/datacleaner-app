@@ -407,5 +407,49 @@ def config():
                 console.print(f"  Installed models: {', '.join(models[:5])}")
 
 
+# ============================================================
+#  SCRUB-DUMP COMMAND
+# ============================================================
+@main.command()
+@click.argument("input_file", type=click.Path(exists=True))
+@click.option("--output", "-o", type=click.Path(), help="Output file path")
+@click.option("--format", "dump_format", type=click.Choice(["csv", "sql", "json"]),
+              help="Input format (auto-detected if omitted)")
+@click.option("--audit-dir", type=click.Path(), help="Directory for audit logs")
+@click.option("--style", type=click.Choice(["block", "placeholder", "mask"]),
+              default="placeholder", help="Anonymization style (default: placeholder)")
+@click.option("--json", "output_json", is_flag=True, help="Output stats as JSON")
+def scrub_dump(input_file, output, dump_format, audit_dir, style, output_json):
+    """Scrub PII from a database dump (CSV, SQL, JSON).
+
+    Auto-detects which columns contain PII and replaces sensitive
+    values with consistent, deterministic fake data. All processing
+    is local — zero data leaves your machine.
+
+    \b
+    Examples:
+        dc scrub-dump production_export.csv
+        dc scrub-dump backup.sql --format sql
+        dc scrub-dump users.json --style mask -o clean_users.json
+    """
+    from datacleaner.commands.scrub_dump import scrub_dump as _scrub_dump
+
+    try:
+        _scrub_dump(
+            input_path=input_file,
+            output_path=output,
+            audit_dir=audit_dir,
+            style=style,
+            dump_format=dump_format,
+            output_json=output_json,
+        )
+    except FileNotFoundError as e:
+        console.print(f"[red]✗ {e}[/red]")
+        sys.exit(1)
+    except Exception as e:
+        console.print(f"[red]✗ Error: {e}[/red]")
+        sys.exit(1)
+
+
 if __name__ == "__main__":
     main()
