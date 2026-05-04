@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>DataCleaner AI — Local-First PII Redaction for GDPR & HIPAA Compliance</title>
-<meta name="description" content="DataCleaner AI is a local-first PII detection and redaction engine. Scan documents, emails, and databases for sensitive data — nothing ever leaves your machine. GDPR, HIPAA, and CCPA ready.">
+<title>DataCleaner AI — Deterministic PII Scrubbing. Data That Still Works.</title>
+<meta name="description" content="DataCleaner AI scrubs PII from databases and documents with deterministic, format-preserving anonymization. Scrubbed emails, phones, and IDs stay consistent across tables — your JOINs work. Your BI renders. Your tests pass. All local. GDPR & HIPAA compliant.">
 <meta name="keywords" content="PII detection, GDPR compliance, data redaction, local AI, Ollama, privacy, HIPAA, CCPA, document scanning, data protection">
 <meta name="author" content="DataCleaner AI">
 <meta name="robots" content="index, follow">
@@ -12,8 +12,8 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛡️</text></svg>">
 
 <!-- Open Graph -->
-<meta property="og:title" content="DataCleaner AI — Local-First PII Redaction">
-<meta property="og:description" content="Scan documents for PII entirely on your machine. Zero data leakage. GDPR & HIPAA compliant audit trails.">
+<meta property="og:title" content="DataCleaner AI — Deterministic PII Scrubbing. Data That Still Works.">
+<meta property="og:description" content="Scrub databases and documents with deterministic anonymization. JOINs survive. BI dashboards render. Test suites pass. Running entirely on your machine.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://getdatacleaner.com/">
 
@@ -325,13 +325,14 @@ body {
 <header class="hero">
     <div class="container hero-content">
         <div class="hero-badge animate">
-            <span class="pulse"></span> LOCAL-FIRST · ZERO DATA LEAKAGE · GDPR READY
+            <span class="pulse"></span> DETERMINISTIC · JOIN-SAFE · LOCAL GPU · GDPR READY
         </div>
-        <h1 class="animate delay-1">Your Documents Never<br>Leave <span class="gradient-text">Your Machine</span></h1>
+        <h1 class="animate delay-1">Scrub Data That<br><span class="gradient-text">Still Works</span></h1>
         <p class="hero-subtitle animate delay-2">
-            DataCleaner AI is a local-first PII detection and redaction engine.
-            Scan PDFs, emails, databases, and spreadsheets for sensitive data —
-            <strong>powered by your own GPU</strong>, not the cloud.
+            DataCleaner AI doesn't just erase PII — it <strong>reconstructs</strong> it.
+            Same input → same fake output, across every table, every run.
+            Your JOINs survive. Your BI dashboards render. Your test suite passes.
+            <strong>Powered by your own GPU</strong>, not the cloud.
         </p>
         <div class="hero-actions animate delay-2">
             <a href="#pricing" class="btn btn-primary btn-lg">Get Started — $49/month</a>
@@ -356,25 +357,30 @@ body {
             </div>
             <div class="terminal-body">
                 <div class="terminal-scan-line"></div>
-<span class="line"><span class="prompt">❯</span> <span class="cmd">dc scan ./legal-docs/ --redact --style block</span></span>
+<span class="line"><span class="prompt">❯</span> <span class="cmd">dc scrub-dump production_backup.csv</span></span>
 <span class="line">&nbsp;</span>
-<span class="line"><span class="dim">  DataCleaner AI v0.1.0 | Model: qwen3.5:9b | GPU: RTX 5070 Ti</span></span>
-<span class="line"><span class="dim">  Scanning 4 file(s)...</span></span>
+<span class="line"><span class="dim">  DataCleaner AI v0.1.0 | GPU: RTX 5070 Ti | SHA-256 deterministic</span></span>
+<span class="line"><span class="dim">  Format: csv | Style: placeholder | Rows: 50,000 | Columns: 18</span></span>
 <span class="line">&nbsp;</span>
-<span class="line">  <span class="ok">✓</span> <span class="dim">contracts/nda_2026.pdf</span>          <span class="warn">47 findings</span>  <span class="dim">CONTACT(23) IDENTITY(12) FINANCIAL(8) MEDICAL(4)</span></span>
-<span class="line">  <span class="ok">✓</span> <span class="dim">hr/employee_records.csv</span>        <span class="warn">231 findings</span> <span class="dim">CONTACT(89) IDENTITY(76) FINANCIAL(44) PERSONAL_ID(22)</span></span>
-<span class="line">  <span class="ok">✓</span> <span class="dim">legal/board_minutes.docx</span>       <span class="warn">18 findings</span>  <span class="dim">PERSON_NAME(12) ADDRESS(4) CREDENTIALS(2)</span></span>
-<span class="line">  <span class="ok">✓</span> <span class="dim">emails/customer_support.txt</span>    <span class="warn">89 findings</span>  <span class="dim">CONTACT(45) FINANCIAL_CTX(23) IDENTITY(21)</span></span>
+<span class="line">  <span class="dim">Phase 1: Column Classification</span></span>
+<span class="line">  <span class="warn">email</span>      <span class="dim">SENSITIVE  email</span></span>
+<span class="line">  <span class="warn">phone</span>      <span class="dim">SENSITIVE  phone_us</span></span>
+<span class="line">  <span class="warn">ssn</span>        <span class="dim">SENSITIVE  ssn</span></span>
+<span class="line">  <span class="ok">name</span>       <span class="dim">clean      -</span></span>
+<span class="line"><span class="line">&nbsp;</span>
+<span class="line">  <span class="dim">Phase 2: Deterministic Scrubbing</span></span>
+<span class="line">  <span class="ok">✓</span> <span class="dim">email:</span> <span class="warn">50,000</span> cells → <span class="ok">same fake value across all tables</span></span>
+<span class="line">  <span class="ok">✓</span> <span class="dim">phone:</span> <span class="warn">49,872</span> cells → <span class="ok">format-preserving (+1-555-xxxx)</span></span>
+<span class="line">  <span class="ok">✓</span> <span class="dim">ssn:</span>   <span class="warn">48,310</span> cells → <span class="ok">SSN format preserved (XXX-XX-XXXX)</span></span>
 <span class="line">&nbsp;</span>
-<span class="line"><span class="dim">  ─── Redaction Complete ───</span></span>
-<span class="line">  <span class="ok">✓</span> <span class="dim">Output: ./redacted/ (4 files, 385 redactions applied)</span></span>
-<span class="line">  <span class="ok">✓</span> <span class="dim">Audit Log: ~/.datacleaner/audit/audit_20260502_1423.json</span></span>
-<span class="line">  <span class="info">ℹ</span> <span class="dim">GDPR Article 30 record generated. HIPAA audit trail saved.</span></span>
+<span class="line"><span class="dim">  ─── Scrubbing Complete ───</span></span>
+<span class="line">  <span class="ok">✓</span> <span class="dim">Output: production_scrubbed.csv (148,182 cells anonymized)</span></span>
+<span class="line">  <span class="ok">✓</span> <span class="dim">Audit: ~/.datacleaner/audit/audit_backup_20260504.json</span></span>
+<span class="line">  <span class="info">ℹ</span> <span class="dim">JOIN-safe verified. Foreign keys preserved. BI dashboards intact.</span></span>
 <span class="line">&nbsp;</span>
-<span class="line"><span class="prompt">❯</span> <span class="cmd">cat redacted/nda_2026.pdf | head -3</span></span>
-<span class="line"><span class="dim">  This Agreement is made between [REDACTED] ("Disclosing Party")</span></span>
-<span class="line"><span class="dim">  and [REDACTED] ("Receiving Party"), effective as of [REDACTED].</span></span>
-<span class="line"><span class="dim">  Contact: [REDACTED] | Phone: [REDACTED] | SSN: [REDACTED]</span></span>
+<span class="line"><span class="prompt">❯</span> <span class="cmd">head -2 production_scrubbed.csv</span></span>
+<span class="line"><span class="dim">  name,email,phone,ssn,department</span></span>
+<span class="line"><span class="dim">  John Smith,anon_b4f6@scrubbed.local,+1-555-9293,XXX-XX-26a5,Engineering</span></span>
             </div>
         </div>
     </div>
@@ -385,10 +391,16 @@ body {
     <div class="container">
         <div class="section-header">
             <div class="section-label">Core Features</div>
-            <h2>Everything You Need for PII Compliance</h2>
-            <p>DataCleaner combines regex speed with local AI intelligence — no compromises on privacy or performance.</p>
+            <h2>Scrub PII Without Breaking Your Data</h2>
+            <p>Most anonymizers turn data into garbage. DataCleaner uses deterministic reconstruction — your JOINs, BI dashboards, and test suites stay intact.</p>
         </div>
         <div class="features-grid">
+            <div class="feature-card">
+                <span class="feature-icon">🔄</span>
+                <h3>Deterministic Anonymization</h3>
+                <p>SHA-256 hashing ensures the same real value always maps to the same fake value — across every table, every export, every time. Your JOINs don't break. Your BI dashboards keep rendering. Your test suite keeps passing.</p>
+                <span class="tag">Join-Safe</span>
+            </div>
             <div class="feature-card">
                 <span class="feature-icon">🏠</span>
                 <h3>100% Local Processing</h3>
@@ -403,9 +415,15 @@ body {
                 <span class="tag">Regex + LLM</span>
             </div>
             <div class="feature-card">
+                <span class="feature-icon">📊</span>
+                <h3>Scrub Database Dumps</h3>
+                <p><code>dc scrub-dump</code> handles CSV, SQL, and JSON database exports. Auto-detects which columns contain PII. Replaces sensitive values with deterministic, format-preserving fake data in one command.</p>
+                <span class="tag">dc scrub-dump</span>
+            </div>
+            <div class="feature-card">
                 <span class="feature-icon">📋</span>
                 <h3>Compliance Audit Trails</h3>
-                <p>Every scan generates a cryptographically-signed, timestamped audit log. Ready for GDPR Article 30, HIPAA Technical Safeguards, CCPA data inventory, and ISO 27001 evidence collection.</p>
+                <p>Every scan generates a timestamped audit log. Ready for GDPR Article 30, HIPAA Technical Safeguards, CCPA data inventory, and ISO 27001 evidence collection. Never contains actual PII values.</p>
                 <span class="tag">GDPR · HIPAA · CCPA</span>
             </div>
             <div class="feature-card">
@@ -413,12 +431,6 @@ body {
                 <h3>International PII Coverage</h3>
                 <p>Detects US SSN, UK NI Number, China Resident ID, EU IBAN/SWIFT, passport numbers from 30+ countries, and localized phone/address formats. Built for global compliance teams.</p>
                 <span class="tag">30+ Countries</span>
-            </div>
-            <div class="feature-card">
-                <span class="feature-icon">🔌</span>
-                <h3>CLI-First, API-Ready</h3>
-                <p>Terminal-native for ad-hoc scans and shell scripting. REST API available for CI/CD pipelines, automated workflows, and integration with n8n, Zapier, or Make.com.</p>
-                <span class="tag">CLI + REST API</span>
             </div>
         </div>
     </div>
@@ -430,7 +442,7 @@ body {
         <div class="local-banner-icon">🖥️</div>
         <div>
             <h3>Powered by Your Hardware, Not Our Servers</h3>
-            <p>DataCleaner runs on <strong>your NVIDIA RTX GPU, Apple Silicon, or AMD GPU</strong> via Ollama. No subscription to cloud AI APIs. No per-token billing. No data ever transmitted over the network. Even license validation is offline — zero network calls, ever.</p>
+            <p>DataCleaner runs on <strong>your NVIDIA RTX GPU, Apple Silicon, or AMD GPU</strong> via Ollama. No subscription to cloud AI APIs. No per-token billing. <strong>No data ever leaves your machine</strong> — even license validation is offline. This isn't a privacy promise. It's a physical fact.</p>
             <div class="checks">
                 <span class="check">✓ RTX 3070+ / 5070 Ti</span>
                 <span class="check">✓ Apple M1/M2/M3/M4</span>
@@ -446,8 +458,8 @@ body {
     <div class="container">
         <div class="section-header">
             <div class="section-label">How It Works</div>
-            <h2>Three Steps. Zero Leaks.</h2>
-            <p>From document to compliance-ready output in under 3 seconds per file.</p>
+            <h2>Three Steps. Scrubbed Data That Works.</h2>
+            <p>From production dump to compliance-ready, business-continuity-safe data in minutes.</p>
         </div>
         <div class="steps">
             <div class="step">

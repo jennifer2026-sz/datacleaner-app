@@ -41,8 +41,8 @@ BANNER = """
    ██████╔╝██║  ██║   ██║   ██║  ██║╚██████╗███████╗███████╗██║  ██║██║ ╚████║███████╗██║  ██║
    ╚═════╝ ╚═╝  ╚═╝   ╚═╝   ╚═╝  ╚═╝ ╚═════╝╚══════╝╚══════╝╚═╝  ╚═╝╚═╝  ╚═══╝╚══════╝╚═╝  ╚═╝
 [/bold cyan]
-[dim]   Local AI-Powered PII Detection & Redaction — Zero Data Leaves Your Machine[/dim]
-[dim]   v{version} | Powered by Ollama + Regex | https://getdatacleaner.com[/dim]
+[dim]   Deterministic PII Scrubbing — Scrubbed Data That Still Works[/dim]
+[dim]   v{version} | Powered by Ollama + SHA-256 | https://getdatacleaner.com[/dim]
 """
 
 
