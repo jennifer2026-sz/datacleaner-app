@@ -1,21 +1,150 @@
-MIT License
+DataCleaner License
+Version 1.0, May 2026
+Copyright (c) 2026 Jeam. All rights reserved.
 
-Copyright (c) 2026 Jeam
+================================================================
+1. GRANT OF RIGHTS
+================================================================
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+This software is source-available. Permission is hereby granted, free of
+charge, to any person obtaining a copy of this software and associated
+documentation files (the "Software"), to:
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+  (a) View, download, and inspect the source code.
+  (b) Use the Software in its Free tier capacity for any purpose
+      (personal, educational, non-commercial, or commercial evaluation).
+  (c) Modify the source code for personal or internal use only.
+  (d) Redistribute unmodified copies of the Software, provided this
+      license notice is included.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+The above rights are subject to the following conditions and limitations.
+
+================================================================
+2. COMMERCIAL USE
+================================================================
+
+"Commercial Use" means any use of the Software that:
+
+  (a) Is performed by or on behalf of a legal entity (company,
+      organization, government body) in connection with that entity's
+      business operations, products, or services.
+
+  (b) Processes data on behalf of paying clients or customers.
+
+  (c) Generates revenue, directly or indirectly, for the user or
+      the user's employer.
+
+Commercial Use of the Software BEYOND the Free tier requires a paid
+license ("Pro License" or "Team License") purchased from the licensor
+via https://getdatacleaner.com or an authorized reseller.
+
+The Free tier includes:
+  - Regex-only PII scanning (unlimited documents, unlimited data size)
+  - LLM scanning limited to 500 characters per document
+  - Audit log generation
+  - CSV, JSON, TXT, and LOG format support
+
+The Pro License additionally unlocks:
+  - Unlimited LLM scanning
+  - dc scrub-dump command (deterministic database dump anonymization)
+  - PDF, DOCX, XLSX, and SQL format processing
+  - Programmatic API access
+  - SHA-256 deterministic fake value generation
+  - Priority email support
+
+================================================================
+3. RESTRICTIONS
+================================================================
+
+You may NOT, without explicit written permission from the licensor:
+
+  (a) Remove, alter, or circumvent the license key validation mechanism.
+
+  (b) Redistribute modified versions of the Software.
+
+  (c) Sublicense, resell, rent, or lease the Software or any derivative
+      works to third parties.
+
+  (d) Use the Software to build a competing product or service.
+
+  (e) Use the Software in violation of applicable data protection laws
+      (GDPR, HIPAA, CCPA, etc.) or for unlawful surveillance.
+
+  (f) Remove or alter any copyright, trademark, or attribution notices.
+
+================================================================
+4. INTELLECTUAL PROPERTY
+================================================================
+
+All rights, title, and interest in and to the Software, including all
+intellectual property rights, are and shall remain with the licensor.
+
+This license does NOT grant:
+  - Any trademark rights.
+  - Any patent rights.
+  - Any rights to the "DataCleaner" name or branding.
+
+================================================================
+5. DISCLAIMER OF WARRANTY
+================================================================
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, TITLE, AND
+NON-INFRINGEMENT.
+
+THE LICENSOR DOES NOT WARRANT THAT THE SOFTWARE WILL DETECT ALL
+INSTANCES OF PERSONALLY IDENTIFIABLE INFORMATION OR THAT USE OF THE
+SOFTWARE WILL ENSURE COMPLIANCE WITH ANY DATA PROTECTION REGULATION.
+THE USER IS SOLELY RESPONSIBLE FOR VERIFYING COMPLIANCE WITH APPLICABLE
+LAWS.
+
+================================================================
+6. LIMITATION OF LIABILITY
+================================================================
+
+IN NO EVENT SHALL THE LICENSOR BE LIABLE FOR ANY CLAIM, DAMAGES, OR
+OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT, OR OTHERWISE,
+ARISING FROM, OUT OF, OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+OTHER DEALINGS IN THE SOFTWARE.
+
+IN NO EVENT SHALL THE LICENSOR'S TOTAL LIABILITY EXCEED THE LICENSE
+FEES PAID BY THE USER FOR THE SOFTWARE IN THE TWELVE (12) MONTHS
+PRECEDING THE CLAIM.
+
+================================================================
+7. TERMINATION
+================================================================
+
+This license terminates automatically if you violate any of its terms.
+Upon termination, you must cease all use of the Software and destroy
+all copies in your possession.
+
+Sections 4 (Intellectual Property), 5 (Disclaimer), 6 (Limitation of
+Liability), and 8 (Governing Law) survive termination.
+
+================================================================
+8. GOVERNING LAW
+================================================================
+
+This license shall be governed by and construed in accordance with the
+laws of the People's Republic of China, without regard to conflict of
+law principles.
+
+Any dispute arising from this license shall be submitted to the
+competent courts of Shenzhen, Guangdong Province, China.
+
+================================================================
+9. CONTACT
+================================================================
+
+For commercial licensing, partnership inquiries, or permission
+requests:
+
+  Website: https://getdatacleaner.com
+  Email:   contact@getdatacleaner.com
+  GitHub:  https://github.com/jennifer2026-sz/datacleaner-app
+
+================================================================
+END OF LICENSE
+================================================================

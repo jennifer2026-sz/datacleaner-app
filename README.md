@@ -3,7 +3,7 @@
 **Deterministic Data Reconstruction — Scrubbed Data That Still Works**
 
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org)
-[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+[![License](https://img.shields.io/badge/license-Source%20Available-blue.svg)](LICENSE)
 [![Powered by Ollama](https://img.shields.io/badge/powered-Ollama-orange.svg)](https://ollama.ai)
 [![GPU: Local](https://img.shields.io/badge/GPU-Local%20RTX-purple.svg)]()
 [![Tests: 148/148](https://img.shields.io/badge/tests-148%2F148-brightgreen.svg)]()
@@ -212,9 +212,12 @@ and confidence scores — **without ever storing the actual PII values**.
 
 ## 📄 License
 
-MIT License — see [LICENSE](LICENSE).
+Source Available License — see [LICENSE](LICENSE).
 
-Pro and Team tiers use a commercial license addendum. See [EULA](https://getdatacleaner.com/eula).
+Free for personal, educational, and evaluation use. Commercial use beyond the
+Free tier requires a Pro or Team license purchased from
+[getdatacleaner.com](https://getdatacleaner.com). See the
+[EULA](https://getdatacleaner.com/eula) for complete terms.
 
 ---
 
