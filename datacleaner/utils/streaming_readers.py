@@ -51,22 +51,13 @@ def csv_chunked_reader(
                         batch = []
                 if batch:
                     yield headers, batch
-            return  # success — done
+            return  # success — encoding worked
         except (UnicodeDecodeError, UnicodeError):
             continue
 
-    # Absolute last resort
-    with open(filepath, "r", encoding="latin-1", errors="replace", newline="") as fh:
-        reader = csv.DictReader(fh)
-        headers = reader.fieldnames or []
-        batch: list[dict] = []
-        for row in reader:
-            batch.append(dict(row))
-            if len(batch) >= chunk_size:
-                yield headers, batch
-                batch = []
-        if batch:
-            yield headers, batch
+    # If we get here, no encoding worked — this shouldn't happen
+    # since latin-1 never raises UnicodeDecodeError, but just in case:
+    raise ValueError(f"Unable to decode CSV file with any supported encoding: {filepath}")
 
 
 def text_chunked_reader(
