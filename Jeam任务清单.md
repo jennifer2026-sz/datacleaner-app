@@ -8,15 +8,23 @@
 
 ## 第一优先级：Paddle 收款通道
 
-### 任务1：跟进 Paddle 商户审核 ⬜ Jeam待办
-- 5月3日已提交 Paddle Merchant 申请
-- 当前状态：审核中
+### 任务1：跟进 Paddle 商户审核 ⬜ Jeam待办 🔥 URGENT
+- 5月3日已提交，今天（5/19）收到拒信
+- **拒绝原因：提交了 jennifer2026-sz.github.io 子域名，而非正式域名**
 - 需要做的：
-  1. 登录 Paddle 后台查看审核状态
-  2. 如果被拒，查看拒绝原因，补充材料
-  3. 如果通过，测试 checkout 流程
-  4. 确认 SWIFT 收款到国内银行账户的路径通畅
-- 备注：这是整个商业化的卡点，审核不过就没法收钱
+  1. 点击 Paddle 邮件中的 "Submit additional information" 链接
+  2. **将域名改为 getdatacleaner.com**
+  3. 在补充说明中写：
+     - "Our primary domain is getdatacleaner.com (not the github.io subdomain). 
+        The github.io was used only during initial development. 
+        getdatacleaner.com has been live since May 1 with full legal pages 
+        (Privacy Policy, Terms of Service, EULA), professional landing page, 
+        and active engineering blog."
+     - 附上链接：https://getdatacleaner.com, https://getdatacleaner.com/privacy.html, https://getdatacleaner.com/terms.html, https://getdatacleaner.com/eula.html
+  4. 确认网站访问正常（已检查：200 OK，Cloudflare CDN）
+  5. 确认 purchase.html 页面有清晰的产品描述和价格
+- 建议：可以同时在 GitHub Pages 设置里确认 Custom Domain 指向 getdatacleaner.com
+- 参考：Post #4 博客记录了完整部署过程
 
 ---
 
