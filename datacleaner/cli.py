@@ -118,7 +118,8 @@ def main(ctx):
 @click.option("--audit-dir", type=click.Path(), help="Directory for audit logs")
 @click.option("--model", help="Ollama model to use (overrides config)")
 @click.option("--json", "output_json", is_flag=True, help="Output results as JSON")
-def scan(path, redact, no_llm, style, output, audit_dir, model, output_json):
+@click.option("--workers", "-w", type=int, default=1, help="Number of parallel workers (default: 1)")
+def scan(path, redact, no_llm, style, output, audit_dir, model, output_json, workers):
     """Scan files or directories for PII.
 
     PATH can be a file or directory. Supports PDF, DOCX, CSV, XLSX, TXT,
@@ -149,6 +150,8 @@ def scan(path, redact, no_llm, style, output, audit_dir, model, output_json):
         return
 
     console.print(f"\n  [bold]Scanning {len(files)} file(s)[/bold]")
+    if workers > 1:
+        console.print(f"  Workers: [cyan]{workers}[/cyan]")
     if use_llm:
         config = load_config()
         active_model = model or config["ollama"]["model"]
@@ -157,28 +160,58 @@ def scan(path, redact, no_llm, style, output, audit_dir, model, output_json):
         console.print(f"  Regex-only mode | Style: [cyan]{style}[/cyan]")
     console.print()
 
-    # Process each file
+    # --- Process files (parallel or sequential) ---
     all_results = []
-    with Progress(
-        SpinnerColumn(),
-        TextColumn("[progress.description]{task.description}"),
-        console=console,
-    ) as progress:
-        task = progress.add_task("Scanning...", total=len(files))
+    if workers > 1 and len(files) > 1:
+        from concurrent.futures import ThreadPoolExecutor, as_completed
 
-        for filepath in files:
-            progress.update(task, description=f"  [dim]{filepath.name}[/dim]")
+        with Progress(
+            SpinnerColumn(),
+            TextColumn("[progress.description]{task.description}"),
+            console=console,
+        ) as progress:
+            task = progress.add_task("Scanning...", total=len(files))
 
-            try:
-                result = scan_file(filepath, use_llm=use_llm)
-                all_results.append((filepath, result))
-            except ConnectionError as e:
-                console.print(f"\n[red]  ✗ Connection error:[/red] {e}")
-                sys.exit(1)
-            except Exception as e:
-                console.print(f"\n  [yellow]⚠ Skipped {filepath.name}:[/yellow] {e}")
+            with ThreadPoolExecutor(max_workers=min(workers, len(files))) as executor:
+                future_to_file = {
+                    executor.submit(_scan_one_file, fp, use_llm): fp
+                    for fp in files
+                }
+                for future in as_completed(future_to_file):
+                    fp = future_to_file[future]
+                    try:
+                        result = future.result()
+                        all_results.append((fp, result))
+                    except ConnectionError:
+                        console.print(f"\n[red]  ✗ Connection error during scan[/red]")
+                        executor.shutdown(wait=False, cancel_futures=True)
+                        sys.exit(1)
+                    except Exception as e:
+                        console.print(f"\n  [yellow]⚠ Skipped {fp.name}:[/yellow] {e}")
 
-            progress.advance(task)
+                    progress.update(task, advance=1, description=f"  [dim]{fp.name}[/dim]")
+
+    else:
+        with Progress(
+            SpinnerColumn(),
+            TextColumn("[progress.description]{task.description}"),
+            console=console,
+        ) as progress:
+            task = progress.add_task("Scanning...", total=len(files))
+
+            for filepath in files:
+                progress.update(task, description=f"  [dim]{filepath.name}[/dim]")
+
+                try:
+                    result = scan_file(filepath, use_llm=use_llm)
+                    all_results.append((filepath, result))
+                except ConnectionError as e:
+                    console.print(f"\n[red]  ✗ Connection error:[/red] {e}")
+                    sys.exit(1)
+                except Exception as e:
+                    console.print(f"\n  [yellow]⚠ Skipped {filepath.name}:[/yellow] {e}")
+
+                progress.advance(task)
 
     # --- Display results ---
     grand_total = sum(r[1]["stats"]["total"] for r in all_results)
@@ -210,6 +243,11 @@ def scan(path, redact, no_llm, style, output, audit_dir, model, output_json):
             })
         console.print("\n[JSON Output]")
         console.print(json.dumps(json_results, indent=2, ensure_ascii=False))
+
+
+def _scan_one_file(filepath: Path, use_llm: bool) -> dict:
+    """Scan a single file. Top-level wrapper for parallel execution."""
+    return scan_file(filepath, use_llm=use_llm)
 
 
 def _display_scan_results(all_results: list, grand_total: int, style: str):
