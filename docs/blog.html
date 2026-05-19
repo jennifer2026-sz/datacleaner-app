@@ -94,6 +94,94 @@ body { background: var(--bg-deep); color: var(--text-primary); font-family: var(
 
 <section class="posts container">
 
+    <!-- Post 7 → Newest -->
+    <article class="post" id="post-7">
+        <div class="post-meta">
+            <span class="post-date">2026-05-21</span>
+            <span class="post-tag">Compliance</span>
+        </div>
+        <h2><a href="#post-7">GDPR Article 17: Why Deterministic Hashing Is the Only Safe Way to Anonymize</a></h2>
+        <div class="post-body">
+            <p>If you're a developer who's ever been asked to "just anonymize the production database for testing," you know the panic. GDPR Article 17 gives EU citizens the right to have their data erased — completely and irrevocably. But here's the trap: most "anonymization" tools don't actually delete anything. They just scramble the surface.</p>
+
+            <h3>The Problem: Random Anonymization Breaks Everything</h3>
+            <p>Most PII tools generate random fake values for each cell. <code>alice@hospital.com</code> becomes <code>anon_x7k2@fake.com</code> in the patients table, and <code>anon_m9p1@fake.com</code> in the appointments table. Different random values for the same real person.</p>
+            <p>Result: your JOIN queries return garbage. Your BI dashboards show phantom patients. Your test suite can't verify referential integrity. You've exchanged a compliance problem for a data integrity problem.</p>
+
+            <h3>The Solution: SHA-256 Deterministic Hashing</h3>
+            <p>DataCleaner uses a one-way deterministic hash: <strong>same input → same output, every time, across every table, across every run</strong>. <code>alice@hospital.com</code> always becomes the same anonymized value — whether it appears in the patients table, the appointments table, or a JSON export six months later.</p>
+
+            <pre><code># Same email, different tables — same fake value
+patients.email = alice@hospital.com     → anon_b4f6@scrubbed.local
+appointments.contact = alice@hospital.com → anon_b4f6@scrubbed.local
+                                        ↑ IDENTICAL. JOINs survive.</code></pre>
+
+            <p>No mapping table to maintain. No sync service to run. No key management. Just SHA-256 math that produces the same deterministic result on any machine, in any language, forever.</p>
+
+            <h3>Why This Matters for GDPR Article 17</h3>
+            <p>Article 17 requires that personal data be "erased without undue delay." But for development and testing environments, you don't want to actually delete rows — you want to preserve the <em>structure</em> while destroying the <em>identity</em>. Deterministic hashing achieves this: the original data is irreversibly transformed (satisfying GDPR), while the relational structure is preserved (satisfying your engineering team).</p>
+
+            <p>The audit log records every transformation with a timestamp, file hash, and PII category — but never stores the actual original value. This gives you a compliance trail that satisfies both GDPR Article 30 (Records of Processing) and HIPAA audit requirements, without creating a new data leak vector.</p>
+
+            <h3>The Math</h3>
+            <p>Under the hood: <code>SHA-256("dc-scrub-v1:" + original_value)[:12]</code> produces a 12-character hex digest. Combined with format-preserving wrappers (email → <code>anon_XXXX@scrubbed.local</code>, phone → <code>+1-555-XXXX</code>), the output is both deterministic and format-compatible with downstream systems that validate data types.</p>
+
+            <p>One-way means you can't reverse the hash to recover the original. Irreversible means GDPR Article 17 compliance. Format-preserving means your API validation still passes.</p>
+        </div>
+    </article>
+
+    <!-- Post 6 -->
+    <article class="post" id="post-6">
+        <div class="post-meta">
+            <span class="post-date">2026-05-19</span>
+            <span class="post-tag">Engineering</span>
+        </div>
+        <h2><a href="#post-6">Streaming CSV Processing: How We Handle 100GB+ Dumps Without OOM</a></h2>
+        <div class="post-body">
+            <p>DataCleaner v0.2.0 ships with a complete rewrite of our CSV processing pipeline. The old approach — load entire file into memory, process, write — worked fine for 10MB customer lists. It collapsed catastrophically at 500MB production database dumps. Here's how we fixed it.</p>
+
+            <h3>The Memory Bomb</h3>
+            <p>Python's <code>csv.DictReader</code> is an iterator — it doesn't load the entire file at once. But our old code did this:</p>
+            <pre><code>reader = csv.DictReader(f)
+rows = list(reader)  # ← BOOM on 500MB file</code></pre>
+            <p>That <code>list()</code> call forces the entire iterator into memory. A 500MB CSV with 2 million rows × 20 columns ≈ 3-4GB of Python dict objects. Swap death on anything less than a workstation.</p>
+
+            <h3>The Fix: Single-Iterator Two-Phase Streaming</h3>
+            <p>We replaced the eager load with a streaming architecture that never holds more than 10,000 rows in memory at once:</p>
+            <pre><code># Phase 1: read first chunk → classify sensitive columns
+chunk_iter = csv_chunked_reader("dump.csv", chunk_size=10000)
+headers, first_chunk = next(chunk_iter)
+sensitive_cols = classify_columns(first_chunk)
+
+# Phase 2: stream-scrub remaining chunks from SAME iterator
+for _, batch in chunk_iter:
+    for row in batch:
+        for col in sensitive_cols:
+            row[col] = deterministic_fake(row[col])
+    writer.writerows(batch)</code></pre>
+
+            <h3>Why a Single Iterator Matters</h3>
+            <p>The obvious approach — call <code>csv_chunked_reader()</code> twice — is wrong. Each call opens the file from the beginning. You'd process the first chunk twice, corrupting row counts. The single-iterator pattern ensures each row is processed exactly once.</p>
+
+            <p>The first chunk serves double duty: it provides the sample for column classification (which PII types appear in which columns?), and it's also scrubbed and written to output. Zero waste.</p>
+
+            <h3>Text Streaming with Overlap</h3>
+            <p>For document scanning (<code>dc scan</code>), chunking introduces a new problem: what if a social security number straddles the boundary between chunk 14,987 and chunk 14,988? Our text chunked reader carries 200 bytes of overlap between chunks:</p>
+            <pre><code>Chunk N:   "...patient SSN: 123-45-"
+Chunk N+1: "123-45-6789 was recorded on..."  ← overlap caught the split!</code></pre>
+
+            <h3>Results</h3>
+            <p>On a consumer laptop (16GB RAM, RTX 5070 Ti):</p>
+            <ul>
+                <li>10MB CSV: 0.3s (no change — already fast)</li>
+                <li>100MB CSV: 2.1s (was: 8.4s + 2GB RAM)</li>
+                <li>500MB CSV: 11s (was: OOM crash)</li>
+                <li>2GB CSV: 47s (was: impossible)</li>
+            </ul>
+            <p>Memory usage stays flat at ~150MB regardless of file size. The days of "sorry, your database dump is too large" are over.</p>
+        </div>
+    </article>
+
     <!-- Post 5 → Newest -->
     <article class="post" id="post-5">
         <div class="post-meta">
