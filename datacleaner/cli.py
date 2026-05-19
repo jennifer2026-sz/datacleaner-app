@@ -112,7 +112,7 @@ def main(ctx):
 @click.argument("path", type=click.Path(exists=True))
 @click.option("--redact", is_flag=True, help="Apply redaction to output file")
 @click.option("--no-llm", is_flag=True, help="Skip LLM pass (regex only, faster)")
-@click.option("--style", type=click.Choice(["block", "placeholder", "mask"]),
+@click.option("--style", type=click.Choice(["block", "placeholder", "mask", "partial"]),
               default="block", help="Redaction style (default: block)")
 @click.option("--output", "-o", type=click.Path(), help="Output file/directory for redacted content")
 @click.option("--audit-dir", type=click.Path(), help="Directory for audit logs")
@@ -454,7 +454,7 @@ def config():
 @click.option("--format", "dump_format", type=click.Choice(["csv", "sql", "json"]),
               help="Input format (auto-detected if omitted)")
 @click.option("--audit-dir", type=click.Path(), help="Directory for audit logs")
-@click.option("--style", type=click.Choice(["block", "placeholder", "mask"]),
+@click.option("--style", type=click.Choice(["block", "placeholder", "mask", "partial"]),
               default="placeholder", help="Anonymization style (default: placeholder)")
 @click.option("--json", "output_json", is_flag=True, help="Output stats as JSON")
 def scrub_dump(input_file, output, dump_format, audit_dir, style, output_json):
