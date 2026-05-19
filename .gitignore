@@ -39,3 +39,7 @@ Thumbs.db
 # Project-specific
 ~/.datacleaner/
 *.log
+
+# Local-only files (Jeam's personal task list — not for GitHub)
+Jeam任务清单.md
+00_项目总控.md
