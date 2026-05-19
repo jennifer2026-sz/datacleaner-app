@@ -150,11 +150,14 @@ dc license status
 
 | Tier | Price | What You Get |
 |------|-------|--------------|
-| **Free** | $0 | `dc scan` (regex), audit logs, CSV/JSON/SQL formats |
-| **Pro** | $99 one-time | `dc scrub-dump`, full LLM scanning, deterministic anonymization, API access |
-| **Team** | $299 one-time | Everything in Pro + 10 seats, custom patterns, priority support |
+| **Free** | $0 | Regex scanning, audit logs, CSV/JSON/TXT formats |
+| **Pro** | $149 one-time | Full LLM scanning, deterministic hashing, all formats, parallel processing, year 1 updates |
+| **Team** | $399 one-time (5 seats) | Everything in Pro + custom patterns, Docker, priority support |
 
-[Get a License →](https://getdatacleaner.com/#pricing)
+**Optional: $49/year** (Pro) or **$99/year** (Team) for continued updates after year 1.
+Your license never expires — keep using the version you purchased forever.
+
+[View Pricing →](https://getdatacleaner.com/purchase)
 
 ## 🛡️ Privacy & Security
 
