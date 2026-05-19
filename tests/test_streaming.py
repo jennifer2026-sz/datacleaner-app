@@ -4,6 +4,7 @@ import tempfile
 from pathlib import Path
 from datacleaner.config import load_config
 from datacleaner.streaming import StreamingRouter
+from datacleaner.utils.streaming_readers import csv_chunked_reader, text_chunked_reader
 
 
 class TestStreamingConfig:
@@ -52,3 +53,63 @@ class TestStreamingRouter:
         router = StreamingRouter()
         assert router.threshold_bytes == 100 * 1024 * 1024
 
+
+class TestCsvChunkedReader:
+    """Streaming CSV reader — batch rows without loading entire file."""
+
+    def test_yields_batches_of_chunk_size(self, tmp_path):
+        """Should yield batches of exactly chunk_size rows."""
+        csv_path = tmp_path / "test.csv"
+        lines = ["name,email,phone"]
+        for i in range(25):
+            lines.append(f"user{i},u{i}@test.com,555-{i:04d}")
+        csv_path.write_text("\n".join(lines))
+
+        headers = []
+        chunks = []
+        for h, batch in csv_chunked_reader(csv_path, chunk_size=10):
+            headers = h
+            chunks.append(batch)
+
+        assert headers == ["name", "email", "phone"]
+        assert len(chunks) == 3  # 25 rows / 10 = 3 batches
+        assert len(chunks[0]) == 10
+        assert len(chunks[1]) == 10
+        assert len(chunks[2]) == 5
+
+    def test_first_row_is_correct(self, tmp_path):
+        """First yielded row should match first data row."""
+        csv_path = tmp_path / "test.csv"
+        csv_path.write_text("name,email\nAlice,a@b.com\nBob,b@c.com\n")
+
+        for h, batch in csv_chunked_reader(csv_path, chunk_size=10):
+            assert batch[0] == {"name": "Alice", "email": "a@b.com"}
+            break
+
+    def test_empty_file_except_header(self, tmp_path):
+        """CSV with only header should yield no batches."""
+        csv_path = tmp_path / "test.csv"
+        csv_path.write_text("a,b,c\n")
+
+        chunks = list(csv_chunked_reader(csv_path, chunk_size=10))
+        assert len(chunks) == 0
+
+    def test_unicode_values(self, tmp_path):
+        """Should handle Chinese characters in CSV."""
+        csv_path = tmp_path / "test.csv"
+        csv_path.write_text("name,city\n张三,深圳\n李四,北京\n", encoding="utf-8")
+
+        for h, batch in csv_chunked_reader(csv_path, chunk_size=10):
+            assert batch[0]["name"] == "张三"
+            assert batch[0]["city"] == "深圳"
+            break
+
+    def test_encoding_fallback(self, tmp_path):
+        """Should handle Latin-1 encoded CSV."""
+        csv_path = tmp_path / "test.csv"
+        # Write as latin-1
+        csv_path.write_bytes("name,value\ncafé,100\n".encode("latin-1"))
+
+        for h, batch in csv_chunked_reader(csv_path, chunk_size=10, encoding="latin-1"):
+            assert batch[0]["name"] == "café"
+            break
