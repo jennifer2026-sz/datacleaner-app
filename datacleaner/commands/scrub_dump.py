@@ -28,6 +28,9 @@ from datacleaner.config import load_config
 
 console = Console()
 
+# Streaming: rows per batch when processing CSV via chunked reader
+_STREAM_CHUNK_ROWS = 10000
+
 # ============================================================
 #  COLUMN PII CLASSIFICATION
 # ============================================================
@@ -401,7 +404,14 @@ def scrub_dump(
 
     # --- Load data ---
     if dump_format == "csv":
-        headers, rows = read_csv_dump(input_path)
+        # Use streaming for CSV: classify on first chunk, then stream-scrub
+        stats = _scrub_csv_streaming(
+            input_path, output_path, style, audit_base,
+        )
+        if output_json:
+            console.print("\n[JSON Output]")
+            console.print(json.dumps(stats, indent=2, ensure_ascii=False))
+        return stats
     elif dump_format == "json":
         import json as _json
         with open(input_path, "r", encoding="utf-8") as f:
@@ -544,6 +554,196 @@ def scrub_dump(
         console.print(json.dumps(stats, indent=2, ensure_ascii=False))
 
     return stats
+
+
+# ============================================================
+#  STREAMING CSV SCRUB
+# ============================================================
+
+def _scrub_csv_streaming(
+    input_path: Path,
+    output_path: Path,
+    style: str,
+    audit_base: Path,
+) -> dict:
+    """Scrub a CSV dump using streaming — never loads entire file into memory.
+
+    Two-phase approach using a single iterator:
+      1. Read first chunk → classify columns, sample PII types
+      2. Continue same iterator → scrub + write incrementally
+    """
+    from datacleaner.utils.streaming_readers import csv_chunked_reader
+
+    total_rows = 0
+    total_cells_scrubbed = 0
+    pii_by_column: dict[str, int] = {}
+
+    # --- Create single iterator ---
+    chunk_iter = csv_chunked_reader(input_path, chunk_size=_STREAM_CHUNK_ROWS)
+
+    # Get first chunk
+    try:
+        headers_raw, first_chunk_rows = next(chunk_iter)
+    except StopIteration:
+        console.print("[yellow]No data rows found in dump.[/yellow]")
+        return {"total_rows": 0, "sensitive_columns": [], "total_cells_scrubbed": 0, "pii_by_column": {}}
+
+    if not first_chunk_rows:
+        console.print("[yellow]No data rows found in dump.[/yellow]")
+        return {"total_rows": 0, "sensitive_columns": [], "total_cells_scrubbed": 0, "pii_by_column": {}}
+
+    headers: list[str] = list(headers_raw)
+
+    # --- Phase 1: classify from first chunk ---
+    console.print(f"\n  [bold]Phase 1:[/bold] Classifying columns (sampling from first {len(first_chunk_rows)} rows)...")
+    column_status = classify_columns(first_chunk_rows, headers)
+    sensitive_cols = [h for h, s in column_status.items() if s]
+
+    # Display classified columns
+    col_table = Table(box=box.MINIMAL)
+    col_table.add_column("Column", style="cyan")
+    col_table.add_column("Status")
+    col_table.add_column("PII Type", style="dim")
+    for h in headers:
+        if column_status[h]:
+            sample_val = next((str(r.get(h, "")) for r in first_chunk_rows[:10] if str(r.get(h, "")).strip()), "")
+            pii_type = _get_pii_type_for_cell(sample_val) or "mixed"
+            col_table.add_row(h, "[red]SENSITIVE[/red]", pii_type)
+        else:
+            col_table.add_row(h, "[dim]clean[/dim]", "-")
+    console.print(col_table)
+
+    # --- Phase 2: stream-scrub ---
+    console.print(f"\n  [bold]Phase 2:[/bold] Scrubbing {len(sensitive_cols)} sensitive column(s) [dim](streaming)[/dim]...")
+
+    # Open output file once
+    output_fh = open(output_path, "w", encoding="utf-8", newline="")
+    writer = csv.DictWriter(output_fh, fieldnames=headers)
+    writer.writeheader()
+
+    if not sensitive_cols:
+        # No PII — just stream through remaining chunks
+        writer.writerows(first_chunk_rows)
+        total_rows += len(first_chunk_rows)
+
+        for _, batch in chunk_iter:
+            writer.writerows(batch)
+            total_rows += len(batch)
+
+        output_fh.close()
+
+        audit_data = _build_audit(input_path, output_path, "csv", style,
+                                  total_rows, headers, sensitive_cols, 0, pii_by_column, column_status)
+        audit_path = get_audit_path(input_path, audit_base)
+        save_audit_log(audit_data, audit_path)
+        console.print(f"  [dim]Audit: {audit_path}[/dim]")
+
+        console.print()
+        console.print(Panel.fit(
+            f"[green]✓ Scrubbing complete[/green]\n"
+            f"  {total_rows} rows × {len(headers)} columns\n"
+            f"  No PII detected — clean copy written\n"
+            f"  Output: {output_path.name}",
+            border_style="green",
+        ))
+        return {
+            "total_rows": total_rows,
+            "sensitive_columns": [],
+            "total_cells_scrubbed": 0,
+            "pii_by_column": {},
+        }
+
+    # Has sensitive columns — scrub in streaming mode
+    pii_by_column = {h: 0 for h in sensitive_cols}
+    pii_type_cache: dict[str, str] = {}
+
+    # Process first chunk
+    for row in first_chunk_rows:
+        for header in sensitive_cols:
+            value = str(row.get(header, ""))
+            if not value.strip():
+                continue
+            if value not in pii_type_cache:
+                pii_type_cache[value] = _get_pii_type_for_cell(value) or "generic"
+            pii_type = pii_type_cache[value]
+            row[header] = _generate_fake_value(value, pii_type)
+            pii_by_column[header] += 1
+            total_cells_scrubbed += 1
+
+    writer.writerows(first_chunk_rows)
+    total_rows += len(first_chunk_rows)
+
+    # Stream remaining chunks from the same iterator
+    for _, batch in chunk_iter:
+        for row in batch:
+            for header in sensitive_cols:
+                value = str(row.get(header, ""))
+                if not value.strip():
+                    continue
+                if value not in pii_type_cache:
+                    pii_type_cache[value] = _get_pii_type_for_cell(value) or "generic"
+                pii_type = pii_type_cache[value]
+                row[header] = _generate_fake_value(value, pii_type)
+                pii_by_column[header] += 1
+                total_cells_scrubbed += 1
+
+        writer.writerows(batch)
+        total_rows += len(batch)
+        console.print(f"  [dim]  …{total_rows} rows processed[/dim]", end="\r")
+
+    output_fh.close()
+    console.print(f"  [green]✓[/green] {total_rows} rows processed   ")
+
+    # Display per-column stats
+    for header in sensitive_cols:
+        console.print(f"  [green]✓[/green] {header}: [yellow]{pii_by_column[header]}[/yellow] cells scrubbed")
+
+    # --- Audit ---
+    audit_data = _build_audit(input_path, output_path, "csv", style,
+                              total_rows, headers, sensitive_cols, total_cells_scrubbed,
+                              pii_by_column, column_status)
+    audit_path = get_audit_path(input_path, audit_base)
+    save_audit_log(audit_data, audit_path)
+    console.print(f"  [dim]Audit: {audit_path}[/dim]")
+
+    # --- Summary ---
+    console.print()
+    console.print(Panel.fit(
+        f"[green]✓ Scrubbing complete[/green]\n"
+        f"  {total_rows} rows × {len(headers)} columns\n"
+        f"  {len(sensitive_cols)} sensitive columns found\n"
+        f"  {total_cells_scrubbed} cells anonymized\n"
+        f"  Output: {output_path.name}",
+        border_style="green",
+    ))
+
+    return {
+        "total_rows": total_rows,
+        "sensitive_columns": sensitive_cols,
+        "total_cells_scrubbed": total_cells_scrubbed,
+        "pii_by_column": pii_by_column,
+    }
+
+
+def _build_audit(
+    input_path, output_path, dump_format, style,
+    total_rows, headers, sensitive_cols, total_cells_scrubbed,
+    pii_by_column, column_status,
+) -> dict:
+    """Build audit log dict (shared between streaming and in-memory paths)."""
+    return {
+        "timestamp": __import__("datetime").datetime.utcnow().isoformat() + "Z",
+        "input_file": str(input_path),
+        "output_file": str(output_path),
+        "format": dump_format,
+        "style": style,
+        "total_rows": total_rows,
+        "total_columns": len(headers),
+        "sensitive_columns": sensitive_cols,
+        "total_cells_scrubbed": total_cells_scrubbed,
+        "pii_by_column": pii_by_column,
+        "column_classification": {h: ("SENSITIVE" if s else "clean") for h, s in column_status.items()},
+    }
 
 
 # ============================================================

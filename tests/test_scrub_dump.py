@@ -244,3 +244,63 @@ class TestScrubDumpIntegration:
         finally:
             Path(input_path).unlink(missing_ok=True)
             Path(output_path).unlink(missing_ok=True)
+
+
+class TestScrubDumpStreaming:
+    """Streaming mode for large CSV dumps."""
+
+    def test_large_csv_is_streamed(self, tmp_path):
+        """scrub_dump should process a multi-batch CSV via streaming."""
+        csv_path = tmp_path / "stream_test.csv"
+        out_path = tmp_path / "stream_out.csv"
+
+        lines = ["id,name,email,dept"]
+        for i in range(500):
+            lines.append(f"{i},User{i},user{i}@acme.com,Engineering")
+        csv_path.write_text("\n".join(lines))
+
+        import datacleaner.commands.scrub_dump as sd
+        original = sd._STREAM_CHUNK_ROWS
+        sd._STREAM_CHUNK_ROWS = 100
+
+        try:
+            stats = scrub_dump(
+                str(csv_path),
+                output_path=str(out_path),
+                dump_format="csv",
+            )
+
+            assert stats["total_rows"] == 500
+            assert "email" in stats["sensitive_columns"]
+            assert stats["total_cells_scrubbed"] == 500
+
+            with open(out_path) as f:
+                out_lines = f.readlines()
+            assert len(out_lines) == 501
+            assert "anon_" in out_lines[1]
+            assert "@scrubbed.local" in out_lines[1]
+            assert "User0" in out_lines[1]
+
+        finally:
+            sd._STREAM_CHUNK_ROWS = original
+
+    def test_no_pii_streaming(self, tmp_path):
+        """Streaming should handle CSV with no PII correctly."""
+        csv_path = tmp_path / "clean.csv"
+        out_path = tmp_path / "clean_out.csv"
+
+        lines = ["city,country,population"]
+        for i in range(300):
+            lines.append(f"City{i},Country{i},{1000+i}")
+        csv_path.write_text("\n".join(lines))
+
+        import datacleaner.commands.scrub_dump as sd
+        original = sd._STREAM_CHUNK_ROWS
+        sd._STREAM_CHUNK_ROWS = 100
+        try:
+            stats = scrub_dump(str(csv_path), output_path=str(out_path), dump_format="csv")
+            assert stats["total_rows"] == 300
+            assert stats["sensitive_columns"] == []
+            assert stats["total_cells_scrubbed"] == 0
+        finally:
+            sd._STREAM_CHUNK_ROWS = original
