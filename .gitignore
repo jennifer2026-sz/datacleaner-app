@@ -43,3 +43,9 @@ Thumbs.db
 # Local-only files (Jeam's personal task list — not for GitHub)
 Jeam任务清单.md
 00_项目总控.md
+
+# Hermes agent internal files
+.hermes/
+
+# Build artifacts (already removed from tracking)
+datacleaner.egg-info/
