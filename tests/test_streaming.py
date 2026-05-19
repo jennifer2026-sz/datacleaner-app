@@ -113,3 +113,43 @@ class TestCsvChunkedReader:
         for h, batch in csv_chunked_reader(csv_path, chunk_size=10, encoding="latin-1"):
             assert batch[0]["name"] == "café"
             break
+
+
+class TestTextChunkedReader:
+    """Streaming text reader — overlapping chunks for PII continuity."""
+
+    def test_yields_overlapping_chunks(self, tmp_path):
+        """Chunks should overlap by overlap_bytes for PII continuity."""
+        # 50 chars of predictable text
+        text = "ABCDEFGHIJ" * 5  # 50 chars
+        txt_path = tmp_path / "test.txt"
+        txt_path.write_text(text)
+
+        chunks = list(text_chunked_reader(
+            txt_path, chunk_bytes=20, overlap_bytes=5,
+        ))
+
+        # 50 bytes / (20-5) = ~4 chunks
+        assert len(chunks) >= 3
+        # First chunk has bytes 0-19 + carry
+        assert chunks[0].startswith("ABCDEFGHIJ")
+        # Chunk 2 should contain the overlap from chunk 1
+        assert text[15:25] in chunks[1]
+
+    def test_small_file_one_chunk(self, tmp_path):
+        """File smaller than chunk_bytes should yield one chunk."""
+        txt_path = tmp_path / "test.txt"
+        txt_path.write_text("short text")
+
+        chunks = list(text_chunked_reader(txt_path, chunk_bytes=1024))
+        assert len(chunks) == 1
+        assert chunks[0] == "short text"
+
+    def test_chinese_text(self, tmp_path):
+        """Should handle multi-byte UTF-8 correctly."""
+        txt_path = tmp_path / "test.txt"
+        txt_path.write_text("用户张三的邮箱是zhangsan@example.com，电话13800138000\n")
+
+        chunks = list(text_chunked_reader(txt_path, chunk_bytes=1024))
+        assert "zhangsan@example.com" in chunks[0]
+        assert "13800138000" in chunks[0]
