@@ -103,7 +103,7 @@ def _partial_mask(value: str, pii_type: str) -> str:
         # Show last 4, mask rest with format
         digits = "".join(c for c in value if c.isdigit())
         if len(digits) >= 4:
-            masked = "*" * (len(digits) - 4) + digits[-4:]
+            masked = "*" * max(len(digits) - 4, 2) + digits[-4:]
             # Format as XXXX-XXXX-XXXX-1234
             groups = [masked[i:i+4] for i in range(0, len(masked), 4)]
             return "-".join(groups)
@@ -112,13 +112,8 @@ def _partial_mask(value: str, pii_type: str) -> str:
     elif pii_type in ("name", "person_name"):
         # Show initials, mask rest
         parts = value.split()
-        masked_parts = []
-        for part in parts:
-            if len(part) <= 2:
-                masked_parts.append(part[0] + "*" * (len(part) - 1))
-            else:
-                masked_parts.append(part[0] + "*" * (len(part) - 1))
-        return " ".join(masked_parts)
+        masked_parts = [part[0] + "*" * (len(part) - 1) for part in parts if part]
+        return " ".join(masked_parts) if masked_parts else "***"
 
     elif pii_type in ("ipv4", "ipv6"):
         # Show first octet, mask rest

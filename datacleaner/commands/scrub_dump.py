@@ -616,66 +616,48 @@ def _scrub_csv_streaming(
     # --- Phase 2: stream-scrub ---
     console.print(f"\n  [bold]Phase 2:[/bold] Scrubbing {len(sensitive_cols)} sensitive column(s) [dim](streaming)[/dim]...")
 
-    # Open output file once
+    # Open output file once — wrapped in try/finally for safety
     output_fh = open(output_path, "w", encoding="utf-8", newline="")
-    writer = csv.DictWriter(output_fh, fieldnames=headers)
-    writer.writeheader()
+    try:
+        writer = csv.DictWriter(output_fh, fieldnames=headers)
+        writer.writeheader()
 
-    if not sensitive_cols:
-        # No PII — just stream through remaining chunks
-        writer.writerows(first_chunk_rows)
-        total_rows += len(first_chunk_rows)
+        if not sensitive_cols:
+            # No PII — just stream through remaining chunks
+            writer.writerows(first_chunk_rows)
+            total_rows += len(first_chunk_rows)
 
-        for _, batch in chunk_iter:
-            writer.writerows(batch)
-            total_rows += len(batch)
+            for _, batch in chunk_iter:
+                writer.writerows(batch)
+                total_rows += len(batch)
 
-        output_fh.close()
+            audit_data = _build_audit(input_path, output_path, "csv", style,
+                                      total_rows, headers, sensitive_cols, 0, pii_by_column, column_status)
+            audit_path = get_audit_path(input_path, audit_base)
+            save_audit_log(audit_data, audit_path)
+            console.print(f"  [dim]Audit: {audit_path}[/dim]")
 
-        audit_data = _build_audit(input_path, output_path, "csv", style,
-                                  total_rows, headers, sensitive_cols, 0, pii_by_column, column_status)
-        audit_path = get_audit_path(input_path, audit_base)
-        save_audit_log(audit_data, audit_path)
-        console.print(f"  [dim]Audit: {audit_path}[/dim]")
+            console.print()
+            console.print(Panel.fit(
+                f"[green]✓ Scrubbing complete[/green]\n"
+                f"  {total_rows} rows × {len(headers)} columns\n"
+                f"  No PII detected — clean copy written\n"
+                f"  Output: {output_path.name}",
+                border_style="green",
+            ))
+            return {
+                "total_rows": total_rows,
+                "sensitive_columns": [],
+                "total_cells_scrubbed": 0,
+                "pii_by_column": {},
+            }
 
-        console.print()
-        console.print(Panel.fit(
-            f"[green]✓ Scrubbing complete[/green]\n"
-            f"  {total_rows} rows × {len(headers)} columns\n"
-            f"  No PII detected — clean copy written\n"
-            f"  Output: {output_path.name}",
-            border_style="green",
-        ))
-        return {
-            "total_rows": total_rows,
-            "sensitive_columns": [],
-            "total_cells_scrubbed": 0,
-            "pii_by_column": {},
-        }
+        # Has sensitive columns — scrub in streaming mode
+        pii_by_column = {h: 0 for h in sensitive_cols}
+        pii_type_cache: dict[str, str] = {}
 
-    # Has sensitive columns — scrub in streaming mode
-    pii_by_column = {h: 0 for h in sensitive_cols}
-    pii_type_cache: dict[str, str] = {}
-
-    # Process first chunk
-    for row in first_chunk_rows:
-        for header in sensitive_cols:
-            value = str(row.get(header, ""))
-            if not value.strip():
-                continue
-            if value not in pii_type_cache:
-                pii_type_cache[value] = _get_pii_type_for_cell(value) or "generic"
-            pii_type = pii_type_cache[value]
-            row[header] = _generate_fake_value(value, pii_type)
-            pii_by_column[header] += 1
-            total_cells_scrubbed += 1
-
-    writer.writerows(first_chunk_rows)
-    total_rows += len(first_chunk_rows)
-
-    # Stream remaining chunks from the same iterator
-    for _, batch in chunk_iter:
-        for row in batch:
+        # Process first chunk
+        for row in first_chunk_rows:
             for header in sensitive_cols:
                 value = str(row.get(header, ""))
                 if not value.strip():
@@ -687,12 +669,30 @@ def _scrub_csv_streaming(
                 pii_by_column[header] += 1
                 total_cells_scrubbed += 1
 
-        writer.writerows(batch)
-        total_rows += len(batch)
-        console.print(f"  [dim]  …{total_rows} rows processed[/dim]", end="\r")
+        writer.writerows(first_chunk_rows)
+        total_rows += len(first_chunk_rows)
 
-    output_fh.close()
-    console.print(f"  [green]✓[/green] {total_rows} rows processed   ")
+        # Stream remaining chunks from the same iterator
+        for _, batch in chunk_iter:
+            for row in batch:
+                for header in sensitive_cols:
+                    value = str(row.get(header, ""))
+                    if not value.strip():
+                        continue
+                    if value not in pii_type_cache:
+                        pii_type_cache[value] = _get_pii_type_for_cell(value) or "generic"
+                    pii_type = pii_type_cache[value]
+                    row[header] = _generate_fake_value(value, pii_type)
+                    pii_by_column[header] += 1
+                    total_cells_scrubbed += 1
+
+            writer.writerows(batch)
+            total_rows += len(batch)
+            console.print(f"  [dim]  …{total_rows} rows processed[/dim]", end="\r")
+
+        console.print(f"  [green]✓[/green] {total_rows} rows processed   ")
+    finally:
+        output_fh.close()
 
     # Display per-column stats
     for header in sensitive_cols:
