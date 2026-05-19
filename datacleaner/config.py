@@ -17,6 +17,11 @@ DEFAULT_CONFIG = {
         "confidence_threshold": 0.7,
         "max_file_size_mb": 100,
     },
+    "streaming": {
+        "chunk_rows": 10000,         # rows per chunk for CSV streaming
+        "chunk_bytes": 10_485_760,   # 10MB read buffer for text streaming
+        "auto_threshold_mb": 100,    # switch to streaming above this size
+    },
     "redaction": {
         "style": "block",          # "block" | "placeholder" | "mask"
         "placeholder_text": "[REDACTED]",
