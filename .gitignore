@@ -53,6 +53,10 @@ datacleaner.egg-info/
 # Internal planning / receipts
 04_收款与合规/
 
+# === INTERNAL: AI workflow docs (local only, never push) ===
+.AI_*
+_AI_*
+
 # === SECURITY: Encryption & Key Material ===
 # NEVER commit vault files — they contain AES-256 encrypted token mappings
 *.vault
