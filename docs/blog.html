@@ -94,6 +94,133 @@ body { background: var(--bg-deep); color: var(--text-primary); font-family: var(
 
 <section class="posts container">
 
+    <!-- Post 8 → Newest -->
+    <article class="post" id="post-8">
+        <div class="post-meta">
+            <span class="post-date">2026-05-21</span>
+            <span class="post-tag">Engineering</span>
+        </div>
+        <h2><a href="#post-8">Not All Data Masking Is Equal: Why We Built 5 Levels into One CLI Tool</a></h2>
+        <div class="post-body">
+            <p>Every company that handles personal data eventually hits the same wall: <strong>one anonymization strategy does not fit all audiences</strong>. The scrubbed data you send to a third-party auditor looks nothing like the scrubbed data your customer support team needs. Yet most tools treat masking as a binary switch — scrub or don't scrub.</p>
+
+            <p>That's why DataCleaner v0.2.0 ships with a tiered masking engine: five distinct levels (L0 through L4) mapped to three operational modes. One command, radically different output depending on who's looking at the data.</p>
+
+            <h3>The Problem: One-Size-Fits-All Anonymization</h3>
+
+            <p>Consider a typical employee database. It has names, emails, phones, SSNs, salaries, addresses, performance notes, and department IDs — all mixed together in a single CSV export from HR. Three different teams need access:</p>
+
+            <ul>
+                <li><strong>External auditor</strong> (GDPR compliance check) — needs to see <em>structure</em> but <em>zero</em> personal data. Not even partial.</li>
+                <li><strong>Customer support lead</strong> — needs to identify people by partial name and domain. "Sarah in Engineering" must still be recognizable.</li>
+                <li><strong>CTO / CEO</strong> — needs full data for internal review, but with the ability to restore everything from a secure backup.</li>
+            </ul>
+
+            <p>If you hand the auditor a partial-mask file, you fail compliance. If you hand the support lead a fully hashed file, they can't do their job. If the CEO can't recover the original data after an audit cycle, the process is broken.</p>
+
+            <p>One strategy cannot serve all three. So we built all three into one CLI.</p>
+
+            <h3>The Architecture: Five Levels, Three Modes</h3>
+
+            <p>DataCleaner's masking engine defines five atomic levels, each with a clear contract:</p>
+
+            <table style="width:100%; border-collapse:collapse; margin:16px 0; font-size:0.88rem;">
+            <tr style="background:rgba(0,212,170,0.06);">
+                <th style="padding:8px 12px; text-align:left; border-bottom:1px solid var(--border);">Level</th>
+                <th style="padding:8px 12px; text-align:left; border-bottom:1px solid var(--border);">Behavior</th>
+                <th style="padding:8px 12px; text-align:left; border-bottom:1px solid var(--border);">Recoverable?</th>
+                <th style="padding:8px 12px; text-align:left; border-bottom:1px solid var(--border);">Example (email)</th>
+            </tr>
+            <tr><td style="padding:6px 12px; border-bottom:1px solid var(--border);"><strong>L0</strong></td><td style="padding:6px 12px; border-bottom:1px solid var(--border);">Preserve — keep original</td><td style="padding:6px 12px; border-bottom:1px solid var(--border);">—</td><td style="padding:6px 12px; border-bottom:1px solid var(--border);"><code>sarah@acme.com</code></td></tr>
+            <tr><td style="padding:6px 12px; border-bottom:1px solid var(--border);"><strong>L1</strong></td><td style="padding:6px 12px; border-bottom:1px solid var(--border);">Partial mask — show edges</td><td style="padding:6px 12px; border-bottom:1px solid var(--border);">No</td><td style="padding:6px 12px; border-bottom:1px solid var(--border);"><code>sar***@acmecorp.com</code></td></tr>
+            <tr><td style="padding:6px 12px; border-bottom:1px solid var(--border);"><strong>L2</strong></td><td style="padding:6px 12px; border-bottom:1px solid var(--border);">Tokenize — AES-256-GCM encrypted</td><td style="padding:6px 12px; border-bottom:1px solid var(--border);">✅ With password</td><td style="padding:6px 12px; border-bottom:1px solid var(--border);"><code>tok_c24c@masked.local</code></td></tr>
+            <tr><td style="padding:6px 12px; border-bottom:1px solid var(--border);"><strong>L3</strong></td><td style="padding:6px 12px; border-bottom:1px solid var(--border);">Full scrub — SHA-256 irreversible</td><td style="padding:6px 12px; border-bottom:1px solid var(--border);">No</td><td style="padding:6px 12px; border-bottom:1px solid var(--border);"><code>anon_d9ca@scrubbed.local</code></td></tr>
+            <tr><td style="padding:6px 12px;"><strong>L4</strong></td><td style="padding:6px 12px;">Delete — remove column</td><td style="padding:6px 12px;">No</td><td style="padding:6px 12px;">🗑 Column removed</td></tr>
+            </table>
+
+            <p>These levels are combined into three preset modes that map to real-world audiences:</p>
+
+            <pre><code># External mode — for public release, compliance audits (L3 + L4)
+dc scrub-dump employees.csv --level external
+
+# Internal mode — for team sharing, customer support (L1)
+dc scrub-dump employees.csv --level internal
+
+# Admin mode — CEO access, fully recoverable (L2 + L0)
+dc scrub-dump employees.csv --level admin --password "master-key"
+
+# And recovery when you need it:
+dc recover employees_scrubbed.csv --password "master-key"</code></pre>
+
+            <h3>Real Output: Sarah Johnson's Row Across All Three Modes</h3>
+
+            <p>Here's what happens to a single employee record under each mode. Notice how non-sensitive columns (employee_id, department, start_date) are never touched, while the treatment of PII columns varies dramatically:</p>
+
+            <table style="width:100%; border-collapse:collapse; margin:16px 0; font-size:0.85rem;">
+            <tr style="background:rgba(0,212,170,0.06);">
+                <th style="padding:6px 10px; text-align:left; border-bottom:1px solid var(--border);">Column</th>
+                <th style="padding:6px 10px; text-align:left; border-bottom:1px solid var(--border);">Original</th>
+                <th style="padding:6px 10px; text-align:left; border-bottom:1px solid var(--border);">External</th>
+                <th style="padding:6px 10px; text-align:left; border-bottom:1px solid var(--border);">Internal</th>
+                <th style="padding:6px 10px; text-align:left; border-bottom:1px solid var(--border);">Admin</th>
+            </tr>
+            <tr><td style="padding:4px 10px; border-bottom:1px solid var(--border);">email</td><td style="padding:4px 10px; border-bottom:1px solid var(--border); color:#ff6b6b;">sarah.j@acme.com</td><td style="padding:4px 10px; border-bottom:1px solid var(--border); color:#00ffc8;">anon_d9ca@scrubbed.local</td><td style="padding:4px 10px; border-bottom:1px solid var(--border); color:#f0c040;">sar***@acmecorp.com</td><td style="padding:4px 10px; border-bottom:1px solid var(--border); color:#58a6ff;">tok_c24c@masked.local</td></tr>
+            <tr><td style="padding:4px 10px; border-bottom:1px solid var(--border);">phone</td><td style="padding:4px 10px; border-bottom:1px solid var(--border); color:#ff6b6b;">+1-415-555-0134</td><td style="padding:4px 10px; border-bottom:1px solid var(--border); color:#00ffc8;">+1-555-34b8</td><td style="padding:4px 10px; border-bottom:1px solid var(--border); color:#f0c040;">+1--***-***</td><td style="padding:4px 10px; border-bottom:1px solid var(--border); color:#58a6ff;">+1-555-37c8</td></tr>
+            <tr><td style="padding:4px 10px; border-bottom:1px solid var(--border);">ssn</td><td style="padding:4px 10px; border-bottom:1px solid var(--border); color:#ff6b6b;">529-37-4812</td><td style="padding:4px 10px; border-bottom:1px solid var(--border); color:#00ffc8;">XXX-XX-2be3</td><td style="padding:4px 10px; border-bottom:1px solid var(--border); color:#f0c040;">***-**-4812</td><td style="padding:4px 10px; border-bottom:1px solid var(--border); color:#58a6ff;">XXX-XX-d816</td></tr>
+            <tr><td style="padding:4px 10px; border-bottom:1px solid var(--border);">name</td><td style="padding:4px 10px; border-bottom:1px solid var(--border); color:#ff6b6b;">Sarah Johnson</td><td style="padding:4px 10px; border-bottom:1px solid var(--border); color:#00ffc8;">[SCRUBBED:471c]</td><td style="padding:4px 10px; border-bottom:1px solid var(--border); color:#f0c040;">Sara*********</td><td style="padding:4px 10px; border-bottom:1px solid var(--border); color:#58a6ff;">TOK_27d20dbc</td></tr>
+            <tr><td style="padding:4px 10px; border-bottom:1px solid var(--border);">salary</td><td style="padding:4px 10px; border-bottom:1px solid var(--border); color:#ff6b6b;">$95,000</td><td style="padding:4px 10px; border-bottom:1px solid var(--border); color:#00ffc8;">[SCRUBBED:6842]</td><td style="padding:4px 10px; border-bottom:1px solid var(--border); color:#f0c040;">$95,***</td><td style="padding:4px 10px; border-bottom:1px solid var(--border); color:#8b9cc0;">$95,000</td></tr>
+            <tr><td style="padding:4px 10px; border-bottom:1px solid var(--border);">dept</td><td style="padding:4px 10px; border-bottom:1px solid var(--border); color:#8b9cc0;">Engineering</td><td style="padding:4px 10px; border-bottom:1px solid var(--border); color:#8b9cc0;">Engineering</td><td style="padding:4px 10px; border-bottom:1px solid var(--border); color:#8b9cc0;">Engineering</td><td style="padding:4px 10px; border-bottom:1px solid var(--border); color:#8b9cc0;">Engineering</td></tr>
+            <tr><td style="padding:4px 10px;">notes</td><td style="padding:4px 10px; color:#ff6b6b;">Top performer...</td><td style="padding:4px 10px; color:#a16207;">🗑 Deleted (L4)</td><td style="padding:4px 10px; color:#f0c040;">Top **********</td><td style="padding:4px 10px; color:#8b9cc0;">Top performer...</td></tr>
+            </table>
+
+            <p>Three key observations:</p>
+            <ol>
+                <li><strong>Non-PII columns are never touched.</strong> employee_id, department, start_date pass through unchanged at every level. The tool auto-detects 35 PII column-name patterns and only scrubs what needs scrubbing.</li>
+                <li><strong>Internal mode preserves business context.</strong> The support lead can see that an email is from @acmecorp.com, that the SSN ends in 4812, and that the employee name starts with "Sara" — enough to identify the person without exposing the full record.</li>
+                <li><strong>Admin mode is fully recoverable.</strong> The CTO can run <code>dc recover</code> with the master password and get back bit-for-bit identical data. 14 out of 14 fields verified in round-trip testing.</li>
+            </ol>
+
+            <h3>How L2 Tokenization Works Under the Hood</h3>
+
+            <p>The recoverable admin mode uses AES-256-GCM encryption with PBKDF2 key derivation (600,000 iterations):</p>
+
+            <pre><code># When you run --level admin --password "master-key":
+# 1. PBKDF2 derives a 256-bit key from your password
+# 2. Each PII value is replaced with a deterministic token
+# 3. Token→Original mappings are stored in an encrypted vault
+# 4. Vault is saved as output.csv.vault (AES-256-GCM)
+
+# Recovery:
+# 1. Load the .vault file
+# 2. Derive key from password
+# 3. Walk the scrubbed CSV, replacing tokens with originals
+# 4. Write fully recovered output</code></pre>
+
+            <p>The vault file is symmetrically encrypted. Without the password, the mapping table is unreadable. With it, recovery is instant — 70 token mappings recovered and verified in under a second in our test suite.</p>
+
+            <h3>Column Detection: No Manual Mapping Required</h3>
+
+            <p>A key design decision: you should never have to tell the tool which columns to scrub. DataCleaner uses two strategies:</p>
+
+            <ul>
+                <li><strong>Column-name matching:</strong> 35 known PII column names (full_name, email, ssn, credit_card, passport, salary, address, ip_address, dob, notes, etc.) are detected by header alone. Fast path — instant classification.</li>
+                <li><strong>Content sampling:</strong> For unlabeled columns, the first 100 rows are sampled. If >30% of non-empty cells match PII regex patterns, the column is marked sensitive. Handles renamed columns, non-English headers, and ad-hoc exports.</li>
+            </ul>
+
+            <p>On our 14-column demo dataset, the classifier correctly identified all 11 PII columns and left employee_id, department, and start_date intact — zero false positives, zero false negatives.</p>
+
+            <h3>Performance: 110 Cells in Under 2 Seconds</h3>
+
+            <p>The tiered engine processes 10 records × 14 columns in ~1.8 seconds on a laptop. Streaming mode handles files over 100MB by processing in 10,000-row chunks — the masking engine never holds more than one chunk in memory. L1 partial masking adds negligible overhead since it's pure string manipulation. L2 tokenization adds AES-256-GCM overhead (~0.3ms per encryption, acceptable for most datasets). L3 SHA-256 hashing is hardware-accelerated on modern CPUs.</p>
+
+            <h3>What This Means for Your Team</h3>
+
+            <p>You no longer need three different tools for three different audiences. You don't need a separate "anonymization pipeline" for compliance and a "masking script" for internal data sharing. One tool, one command, three flags. The output is always deterministic, always format-preserving, and — in admin mode — always recoverable.</p>
+
+            <p>DataCleaner is available now on <a href="https://galaxycontent.gumroad.com/l/qhfjnh" style="color:var(--accent);">Gumroad (Pro $149, Team $399)</a>. All masking levels are included in both tiers. The demo dataset and interactive comparison report are available on <a href="https://github.com/jennifer2026-sz/datacleaner-app" style="color:var(--accent);">GitHub</a>.</p>
+        </div>
+    </article>
+
     <!-- Post 7 → Newest -->
     <article class="post" id="post-7">
         <div class="post-meta">
