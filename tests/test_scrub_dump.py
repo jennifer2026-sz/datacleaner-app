@@ -203,6 +203,7 @@ class TestScrubDumpIntegration:
                 output_path=output_path,
                 dump_format="json",
                 output_json=False,
+                level="external",  # Use external for full scrub (matches old @scrubbed.local output)
             )
 
             assert stats["total_rows"] == 2

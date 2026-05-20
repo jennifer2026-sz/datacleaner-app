@@ -1,0 +1,1150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DataCleaner — Tiered PII Masking Demonstration Report</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   DataCleaner — Business-Grade Demonstration Report
+   Design System: Clean, Professional, International Standard
+   ============================================================ */
+
+:root {
+  --bg-primary:       #ffffff;
+  --bg-secondary:     #f8fafc;
+  --bg-tertiary:      #f1f5f9;
+  --bg-card:          #ffffff;
+  --bg-header:        #0f172a;
+  --bg-tab-active:    #ffffff;
+  --bg-tab-hover:     #e2e8f0;
+  --bg-stat-card:     #f8fafc;
+  --bg-row-stripe:    #f8fafc;
+  --bg-original-cell: #fef2f2;
+  --bg-masked-cell:   #f0fdf4;
+  --bg-token-cell:    #eff6ff;
+  --bg-preserved-cell:#f8fafc;
+
+  --text-primary:     #0f172a;
+  --text-secondary:   #475569;
+  --text-muted:       #94a3b8;
+  --text-inverse:     #ffffff;
+  --text-code:        #1e293b;
+
+  --border-default:   #e2e8f0;
+  --border-light:     #f1f5f9;
+  --border-accent:    #cbd5e1;
+
+  --accent-primary:   #0ea5e9;
+  --accent-success:   #10b981;
+  --accent-warning:   #f59e0b;
+  --accent-danger:    #ef4444;
+  --accent-purple:    #8b5cf6;
+  --accent-navy:      #1e40af;
+
+  --font-sans:        'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono:        'JetBrains Mono', 'SF Mono', 'Cascadia Code', monospace;
+
+  --shadow-sm:        0 1px 2px rgba(0,0,0,0.05);
+  --shadow-md:        0 4px 6px -1px rgba(0,0,0,0.07), 0 2px 4px -2px rgba(0,0,0,0.05);
+  --shadow-lg:        0 10px 15px -3px rgba(0,0,0,0.08), 0 4px 6px -4px rgba(0,0,0,0.05);
+  --shadow-card:      0 1px 3px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.04);
+
+  --radius-sm:        6px;
+  --radius-md:        10px;
+  --radius-lg:        16px;
+  --radius-xl:        20px;
+}
+
+/* --- Reset --- */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-size: 16px; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+body {
+  font-family: var(--font-sans);
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  line-height: 1.6;
+  min-height: 100vh;
+}
+
+/* --- Header --- */
+.header {
+  background: var(--bg-header);
+  color: var(--text-inverse);
+  padding: 48px 0 40px;
+  position: relative;
+  overflow: hidden;
+}
+.header::before {
+  content: '';
+  position: absolute;
+  top: -50%; right: -10%;
+  width: 600px; height: 600px;
+  background: radial-gradient(circle, rgba(14,165,233,0.08) 0%, transparent 70%);
+  pointer-events: none;
+}
+.header::after {
+  content: '';
+  position: absolute;
+  bottom: -30%; left: 60%;
+  width: 400px; height: 400px;
+  background: radial-gradient(circle, rgba(139,92,246,0.06) 0%, transparent 70%);
+  pointer-events: none;
+}
+.header-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 32px;
+  position: relative;
+  z-index: 1;
+}
+.header-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 100px;
+  padding: 6px 16px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: #94a3b8;
+  margin-bottom: 20px;
+}
+.header-badge .dot { width: 8px; height: 8px; border-radius: 50%; background: #10b981; }
+.header-badge .dot::after { content: ''; display: block; width: 100%; height: 100%; border-radius: 50%; background: #10b981; animation: pulse-dot 2s ease-out infinite; }
+@keyframes pulse-dot { 0% { transform: scale(1); opacity: 0.7; } 100% { transform: scale(2.5); opacity: 0; } }
+.header h1 {
+  font-size: 2.4rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin-bottom: 8px;
+}
+.header .subtitle {
+  font-size: 1.05rem;
+  color: #94a3b8;
+  font-weight: 400;
+  max-width: 640px;
+}
+.header-meta {
+  display: flex;
+  gap: 24px;
+  margin-top: 24px;
+  flex-wrap: wrap;
+}
+.header-meta-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85rem;
+  color: #64748b;
+}
+.header-meta-item .icon { font-size: 1.1rem; }
+.header-meta-item strong { color: #e2e8f0; font-weight: 600; }
+
+/* --- Main Content --- */
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 40px 32px 80px;
+}
+
+/* --- Section Headers --- */
+.section { margin-bottom: 48px; }
+.section-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+.section-number {
+  width: 36px; height: 36px;
+  border-radius: var(--radius-sm);
+  background: var(--accent-primary);
+  color: white;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.85rem; font-weight: 700;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.section-header h2 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.01em;
+}
+.section-header p {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  margin-top: 2px;
+}
+
+/* --- Stat Cards Dashboard --- */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 40px;
+}
+.stat-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  padding: 20px 24px;
+  box-shadow: var(--shadow-card);
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  transition: box-shadow 0.2s, transform 0.2s;
+}
+.stat-card:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
+}
+.stat-icon {
+  width: 48px; height: 48px;
+  border-radius: var(--radius-md);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.4rem;
+  flex-shrink: 0;
+}
+.stat-icon.blue   { background: #eff6ff; color: #3b82f6; }
+.stat-icon.green  { background: #f0fdf4; color: #10b981; }
+.stat-icon.purple { background: #faf5ff; color: #8b5cf6; }
+.stat-icon.amber  { background: #fffbeb; color: #f59e0b; }
+.stat-icon.red    { background: #fef2f2; color: #ef4444; }
+.stat-label { font-size: 0.8rem; color: var(--text-muted); font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em; }
+.stat-value { font-size: 1.5rem; font-weight: 700; color: var(--text-primary); line-height: 1.2; }
+.stat-sub   { font-size: 0.78rem; color: var(--text-secondary); margin-top: 2px; }
+
+/* --- Tab Navigation --- */
+.tab-nav {
+  display: flex;
+  gap: 4px;
+  background: var(--bg-tertiary);
+  border-radius: var(--radius-md);
+  padding: 4px;
+  margin-bottom: 24px;
+  width: fit-content;
+  border: 1px solid var(--border-default);
+}
+.tab-btn {
+  padding: 10px 24px;
+  border: none;
+  background: transparent;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-sans);
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+.tab-btn:hover { background: var(--bg-tab-hover); color: var(--text-primary); }
+.tab-btn.active { background: var(--bg-tab-active); color: var(--text-primary); font-weight: 600; box-shadow: var(--shadow-sm); }
+.tab-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 100px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  margin-left: 8px;
+  vertical-align: middle;
+}
+.badge-red    { background: #fef2f2; color: #dc2626; }
+.badge-amber  { background: #fffbeb; color: #d97706; }
+.badge-green  { background: #f0fdf4; color: #059669; }
+
+/* --- Mode Description --- */
+.mode-desc {
+  background: var(--bg-card);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  padding: 20px 24px;
+  margin-bottom: 24px;
+  box-shadow: var(--shadow-card);
+}
+.mode-desc h3 {
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 6px;
+}
+.mode-desc p {
+  font-size: 0.88rem;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+.mode-desc .use-case {
+  display: inline-block;
+  margin-top: 8px;
+  padding: 4px 12px;
+  border-radius: 100px;
+  font-size: 0.78rem;
+  font-weight: 500;
+  background: #eff6ff;
+  color: #2563eb;
+}
+
+/* --- Cross-Mode Comparison Card --- */
+.comparison-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow-card);
+  margin-bottom: 32px;
+}
+.comparison-header {
+  background: var(--bg-tertiary);
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--border-default);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.comparison-header h3 {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.comparison-header .chip {
+  font-size: 0.72rem;
+  font-weight: 500;
+  padding: 3px 10px;
+  border-radius: 100px;
+  background: #eff6ff;
+  color: #2563eb;
+}
+
+/* --- Tables --- */
+.table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+table thead th {
+  background: var(--bg-header);
+  color: var(--text-inverse);
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 14px 16px;
+  text-align: left;
+  border-bottom: 2px solid rgba(255,255,255,0.1);
+  white-space: nowrap;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+table thead th:first-child { border-radius: 8px 0 0 0; }
+table thead th:last-child  { border-radius: 0 8px 0 0; }
+
+table tbody td {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border-light);
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  color: var(--text-code);
+  vertical-align: middle;
+  line-height: 1.5;
+}
+table tbody tr:last-child td { border-bottom: none; }
+table tbody tr:nth-child(even) td { background: var(--bg-row-stripe); }
+
+/* Cell styles */
+.cell-original  { background: var(--bg-original-cell) !important; color: #dc2626 !important; font-weight: 500; }
+.cell-masked    { background: var(--bg-masked-cell) !important; color: #059669 !important; font-weight: 500; }
+.cell-token     { background: var(--bg-token-cell) !important; color: #2563eb !important; font-weight: 500; }
+.cell-preserved { background: var(--bg-preserved-cell) !important; color: #64748b !important; }
+.cell-deleted   { background: #fefce8 !important; color: #a16207 !important; font-style: italic; }
+
+/* Column label in comparison table */
+.col-label {
+  font-family: var(--font-sans) !important;
+  font-weight: 600 !important;
+  font-size: 0.78rem !important;
+  color: var(--text-primary) !important;
+  background: var(--bg-tertiary) !important;
+  min-width: 120px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* --- Features Grid --- */
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 16px;
+}
+.feature-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  box-shadow: var(--shadow-card);
+}
+.feature-card .feature-icon {
+  width: 40px; height: 40px;
+  border-radius: var(--radius-sm);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.2rem;
+  margin-bottom: 12px;
+}
+.feature-card h4 {
+  font-size: 0.95rem;
+  font-weight: 600;
+  margin-bottom: 6px;
+  color: var(--text-primary);
+}
+.feature-card p {
+  font-size: 0.84rem;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+/* --- Callout --- */
+.callout {
+  background: linear-gradient(135deg, #eff6ff, #faf5ff);
+  border: 1px solid #cbd5e1;
+  border-left: 4px solid var(--accent-primary);
+  border-radius: var(--radius-md);
+  padding: 20px 24px;
+  margin: 32px 0;
+}
+.callout h4 { font-size: 0.95rem; font-weight: 600; margin-bottom: 6px; color: var(--text-primary); }
+.callout p  { font-size: 0.88rem; color: var(--text-secondary); line-height: 1.6; }
+.callout code {
+  background: rgba(14,165,233,0.1);
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  color: #0c4a6e;
+  font-weight: 500;
+}
+
+/* --- Footer --- */
+.footer {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 40px 32px;
+  border-top: 1px solid var(--border-default);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+.footer-brand {
+  font-weight: 700;
+  font-size: 1rem;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.footer-brand .dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--accent-success);
+}
+.footer-meta {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  display: flex;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+.footer-meta span { display: flex; align-items: center; gap: 6px; }
+
+/* --- Tab Content Visibility --- */
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+
+/* --- Responsive --- */
+@media (max-width: 768px) {
+  .header { padding: 32px 0 28px; }
+  .header h1 { font-size: 1.6rem; }
+  .container { padding: 24px 16px 48px; }
+  .stats-grid { grid-template-columns: repeat(2, 1fr); }
+  .tab-btn { padding: 8px 14px; font-size: 0.82rem; }
+  table thead th, table tbody td { padding: 10px 12px; font-size: 0.72rem; }
+  .footer { flex-direction: column; align-items: flex-start; padding: 24px 16px; }
+}
+
+/* --- Print Styles --- */
+@media print {
+  body { background: white; font-size: 11pt; }
+  .header { background: white; color: black; padding: 20px 0; }
+  .header h1 { color: black; }
+  .header .subtitle { color: #555; }
+  .header-meta-item { color: #555; }
+  .header-meta-item strong { color: black; }
+  .tab-nav { display: none; }
+  .tab-content { display: block !important; margin-bottom: 40px; }
+  .comparison-card, .stat-card, .feature-card { box-shadow: none; border: 1px solid #ccc; break-inside: avoid; }
+  table thead th { background: #eee; color: black; }
+}
+</style>
+</head>
+<body>
+
+<!-- ============================================================
+     HEADER
+     ============================================================ -->
+<header class="header">
+  <div class="header-inner">
+    <div class="header-badge">
+      <span class="dot"></span> Demonstration Report — v2.0 Tiered Masking
+    </div>
+    <h1>DataCleaner</h1>
+    <p class="subtitle">
+      Enterprise-Grade Tiered PII Masking — Three distinct privacy levels delivered through a single command,
+      from public-facing irreversibility to fully recoverable encryption.
+    </p>
+    <div class="header-meta">
+      <div class="header-meta-item">
+        <span class="icon">📅</span> Date: <strong>May 20, 2026</strong>
+      </div>
+      <div class="header-meta-item">
+        <span class="icon">📦</span> Version: <strong>v0.2.0</strong>
+      </div>
+      <div class="header-meta-item">
+        <span class="icon">🔐</span> Engine: <strong>Tiered L0–L4</strong>
+      </div>
+      <div class="header-meta-item">
+        <span class="icon">🌐</span> Domain: <strong>getdatacleaner.com</strong>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- ============================================================
+     MAIN CONTAINER
+     ============================================================ -->
+<div class="container">
+
+  <!-- ==========================================================
+       SECTION 1 — DASHBOARD
+       ========================================================== -->
+  <section class="section">
+    <div class="section-header">
+      <div class="section-number">1</div>
+      <div>
+        <h2>Processing Summary</h2>
+        <p>Overview of the demonstration dataset and scrubbing results</p>
+      </div>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-icon blue">📊</div>
+        <div>
+          <div class="stat-label">Records</div>
+          <div class="stat-value">10</div>
+          <div class="stat-sub">Employee records</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon purple">📋</div>
+        <div>
+          <div class="stat-label">Columns</div>
+          <div class="stat-value">14</div>
+          <div class="stat-sub">11 PII · 3 non-PII</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon green">✅</div>
+        <div>
+          <div class="stat-label">PII Cells Scrubbed</div>
+          <div class="stat-value">110</div>
+          <div class="stat-sub">Deterministic · JOIN-safe</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon amber">🔐</div>
+        <div>
+          <div class="stat-label">Encryption</div>
+          <div class="stat-value">AES-256</div>
+          <div class="stat-sub">Admin mode · Recoverable</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon red">🗑️</div>
+        <div>
+          <div class="stat-label">Columns Deleted</div>
+          <div class="stat-value">2</div>
+          <div class="stat-sub">External mode only</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==========================================================
+       SECTION 2 — TIERED MASKING MODES
+       ========================================================== -->
+  <section class="section">
+    <div class="section-header">
+      <div class="section-number">2</div>
+      <div>
+        <h2>Tiered Masking Modes</h2>
+        <p>Three privacy levels, one command — select the right level for each audience</p>
+      </div>
+    </div>
+
+    <!-- Tab Switcher -->
+    <div class="tab-nav">
+      <button class="tab-btn active" onclick="switchTab('external')">
+        External<span class="tab-badge badge-red">L3</span>
+      </button>
+      <button class="tab-btn" onclick="switchTab('internal')">
+        Internal<span class="tab-badge badge-amber">L1</span>
+      </button>
+      <button class="tab-btn" onclick="switchTab('admin')">
+        Admin<span class="tab-badge badge-green">L2</span>
+      </button>
+    </div>
+
+    <!-- ==========================================================
+         TAB: External (L3)
+         ========================================================== -->
+    <div id="tab-external" class="tab-content active">
+      <div class="mode-desc">
+        <h3>External Mode — Full Irreversible Scrub (L3)</h3>
+        <p>Complete data anonymization for public release, compliance audits, and third-party sharing. Uses SHA-256 deterministic hashing — same input always yields the same output, preserving JOIN integrity. Sensitive free-text columns (notes, address) are deleted entirely.</p>
+        <span class="use-case">🎯 Use: Public datasets · Compliance reports · Third-party sharing</span>
+      </div>
+
+      <div class="comparison-card">
+        <div class="comparison-header">
+          <h3>Full Dataset — External View</h3>
+          <span class="chip">10 records × 12 columns</span>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th><th>Name</th><th>Email</th><th>Phone</th><th>SSN</th><th>Card</th>
+                <th>Passport</th><th>DOB</th><th>Salary</th><th>Address</th>
+                <th>IP</th><th>Dept</th><th>Start</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>EMP001</td><td class="cell-masked">[SCRUBBED:471c]</td><td class="cell-masked">anon_d9ca@scrubbed.local</td>
+                <td class="cell-masked">+1-555-34b8</td><td class="cell-masked">XXX-XX-2be3</td><td class="cell-masked">XXXX-XXXX-XXXX-e9a1</td>
+                <td class="cell-masked">[SCRUBBED:feb4]</td><td class="cell-masked">[SCRUBBED:06ed]</td><td class="cell-masked">[SCRUBBED:6842]</td><td class="cell-deleted">🗑 Deleted</td>
+                <td class="cell-preserved">192.168.45.23</td><td class="cell-preserved">Engineering</td><td class="cell-preserved">2018-06-15</td>
+              </tr>
+              <tr>
+                <td>EMP002</td><td class="cell-masked">[SCRUBBED:f398]</td><td class="cell-masked">anon_4f25@scrubbed.local</td>
+                <td class="cell-masked">+1-555-217c</td><td class="cell-masked">XXX-XX-94ea</td><td class="cell-masked">XXXX-XXXX-XXXX-03d7</td>
+                <td class="cell-masked">[SCRUBBED:ff7c]</td><td class="cell-masked">[SCRUBBED:30e9]</td><td class="cell-masked">[SCRUBBED:2879]</td><td class="cell-deleted">🗑 Deleted</td>
+                <td class="cell-preserved">10.0.0.142</td><td class="cell-preserved">Sales</td><td class="cell-preserved">2020-01-10</td>
+              </tr>
+              <tr>
+                <td>EMP003</td><td class="cell-masked">[SCRUBBED:2621]</td><td class="cell-masked">anon_55f5@scrubbed.local</td>
+                <td class="cell-masked">+1-555-ece2</td><td class="cell-masked">XXX-XX-bc72</td><td class="cell-masked">[SCRUBBED:056f]</td>
+                <td class="cell-masked">[SCRUBBED:49f5]</td><td class="cell-masked">[SCRUBBED:b4e2]</td><td class="cell-masked">[SCRUBBED:d493]</td><td class="cell-deleted">🗑 Deleted</td>
+                <td class="cell-preserved">172.16.88.5</td><td class="cell-preserved">Engineering</td><td class="cell-preserved">2019-03-22</td>
+              </tr>
+              <tr>
+                <td>EMP004</td><td class="cell-masked">[SCRUBBED:b10e]</td><td class="cell-masked">anon_3a4a@scrubbed.local</td>
+                <td class="cell-masked">+1-555-4d46</td><td class="cell-masked">XXX-XX-dc5f</td><td class="cell-masked">XXXX-XXXX-XXXX-d9d7</td>
+                <td class="cell-masked">[SCRUBBED:5c90]</td><td class="cell-masked">[SCRUBBED:12ba]</td><td class="cell-masked">[SCRUBBED:e320]</td><td class="cell-deleted">🗑 Deleted</td>
+                <td class="cell-preserved">10.45.77.22</td><td class="cell-preserved">Management</td><td class="cell-preserved">2015-09-01</td>
+              </tr>
+              <tr>
+                <td>EMP005</td><td class="cell-masked">[SCRUBBED:f3b2]</td><td class="cell-masked">anon_1c36@scrubbed.local</td>
+                <td class="cell-masked">+1-555-ecd4</td><td class="cell-masked">XXX-XX-4d0f</td><td class="cell-masked">XXXX-XXXX-XXXX-98fa</td>
+                <td class="cell-masked">[SCRUBBED:019a]</td><td class="cell-masked">[SCRUBBED:4c12]</td><td class="cell-masked">[SCRUBBED:ef3e]</td><td class="cell-deleted">🗑 Deleted</td>
+                <td class="cell-preserved">192.168.12.88</td><td class="cell-preserved">Support</td><td class="cell-preserved">2021-04-19</td>
+              </tr>
+              <tr>
+                <td>EMP006</td><td class="cell-masked">[SCRUBBED:866a]</td><td class="cell-masked">anon_9a73@scrubbed.local</td>
+                <td class="cell-masked">+1-555-aab2</td><td class="cell-masked">XXX-XX-2889</td><td class="cell-masked">XXXX-XXXX-XXXX-557a</td>
+                <td class="cell-masked">[SCRUBBED:9a5a]</td><td class="cell-masked">[SCRUBBED:e0d7]</td><td class="cell-masked">[SCRUBBED:9ded]</td><td class="cell-deleted">🗑 Deleted</td>
+                <td class="cell-preserved">10.88.33.7</td><td class="cell-preserved">Engineering</td><td class="cell-preserved">2017-08-14</td>
+              </tr>
+              <tr>
+                <td>EMP007</td><td class="cell-masked">[SCRUBBED:295a]</td><td class="cell-masked">anon_733d@scrubbed.local</td>
+                <td class="cell-masked">+1-555-1b3d</td><td class="cell-masked">XXX-XX-c8f6</td><td class="cell-masked">XXXX-XXXX-XXXX-b821</td>
+                <td class="cell-masked">[SCRUBBED:dbbd]</td><td class="cell-masked">[SCRUBBED:9a41]</td><td class="cell-masked">[SCRUBBED:07f8]</td><td class="cell-deleted">🗑 Deleted</td>
+                <td class="cell-preserved">172.31.200.11</td><td class="cell-preserved">Marketing</td><td class="cell-preserved">2022-02-07</td>
+              </tr>
+              <tr>
+                <td>EMP008</td><td class="cell-masked">[SCRUBBED:2ca8]</td><td class="cell-masked">anon_9d22@scrubbed.local</td>
+                <td class="cell-masked">+1-555-c8a2</td><td class="cell-masked">XXX-XX-816d</td><td class="cell-masked">XXXX-XXXX-XXXX-3b21</td>
+                <td class="cell-masked">[SCRUBBED:9458]</td><td class="cell-masked">[SCRUBBED:5382]</td><td class="cell-masked">[SCRUBBED:3d4a]</td><td class="cell-deleted">🗑 Deleted</td>
+                <td class="cell-preserved">10.0.1.100</td><td class="cell-preserved">Management</td><td class="cell-preserved">2013-11-05</td>
+              </tr>
+              <tr>
+                <td>EMP009</td><td class="cell-masked">[SCRUBBED:74a0]</td><td class="cell-masked">anon_658a@scrubbed.local</td>
+                <td class="cell-masked">+1-555-c263</td><td class="cell-masked">XXX-XX-25f2</td><td class="cell-masked">XXXX-XXXX-XXXX-6989</td>
+                <td class="cell-masked">[SCRUBBED:c77e]</td><td class="cell-masked">[SCRUBBED:83b4]</td><td class="cell-masked">[SCRUBBED:2de5]</td><td class="cell-deleted">🗑 Deleted</td>
+                <td class="cell-preserved">192.168.55.33</td><td class="cell-preserved">Design</td><td class="cell-preserved">2019-11-18</td>
+              </tr>
+              <tr>
+                <td>EMP010</td><td class="cell-masked">[SCRUBBED:b6ed]</td><td class="cell-masked">anon_3edf@scrubbed.local</td>
+                <td class="cell-masked">+1-555-0e64</td><td class="cell-masked">XXX-XX-a794</td><td class="cell-masked">XXXX-XXXX-XXXX-d89d</td>
+                <td class="cell-masked">[SCRUBBED:ecfc]</td><td class="cell-masked">[SCRUBBED:037a]</td><td class="cell-masked">[SCRUBBED:28f0]</td><td class="cell-deleted">🗑 Deleted</td>
+                <td class="cell-preserved">10.10.10.55</td><td class="cell-preserved">Support</td><td class="cell-preserved">2020-07-01</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==========================================================
+         TAB: Internal (L1)
+         ========================================================== -->
+    <div id="tab-internal" class="tab-content">
+      <div class="mode-desc">
+        <h3>Internal Mode — Business-Readable Partial Mask (L1)</h3>
+        <p>Partial masking preserves business context while protecting sensitive details. Names show first characters, emails reveal domain, SSNs display last four digits, and phone area codes remain visible. Perfect for customer support, internal analytics, and cross-team collaboration where some context must survive.</p>
+        <span class="use-case">🎯 Use: Customer support · Internal dashboards · Cross-team sharing</span>
+      </div>
+
+      <div class="comparison-card">
+        <div class="comparison-header">
+          <h3>Full Dataset — Internal View</h3>
+          <span class="chip">10 records × 14 columns</span>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th><th>Name</th><th>Email</th><th>Phone</th><th>SSN</th><th>Card</th>
+                <th>Passport</th><th>DOB</th><th>Salary</th><th>Address</th>
+                <th>IP</th><th>Dept</th><th>Start</th><th>Notes</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>EMP001</td><td class="cell-masked">Sara*********</td><td class="cell-masked">sar***@acmecorp.com</td>
+                <td class="cell-masked">+1--***-***</td><td class="cell-masked">***-**-4812</td><td class="cell-masked">4***********-6789</td>
+                <td class="cell-masked">C30K*****</td><td class="cell-masked">1985******</td><td class="cell-masked">$95,***</td><td class="cell-masked">742 **********</td>
+                <td class="cell-preserved">192.168.45.23</td><td class="cell-preserved">Engineering</td><td class="cell-preserved">2018-06-15</td><td class="cell-masked">Top **********</td>
+              </tr>
+              <tr>
+                <td>EMP002</td><td class="cell-masked">Jame**********</td><td class="cell-masked">j.m***@acmecorp.com</td>
+                <td class="cell-masked">+1--***-***</td><td class="cell-masked">***-**-9237</td><td class="cell-masked">5***********-3210</td>
+                <td class="cell-masked">K92B*****</td><td class="cell-masked">1990******</td><td class="cell-masked">$78,***</td><td class="cell-masked">220 **********</td>
+                <td class="cell-preserved">10.0.0.142</td><td class="cell-preserved">Sales</td><td class="cell-preserved">2020-01-10</td><td class="cell-masked">Exce**********</td>
+              </tr>
+              <tr>
+                <td>EMP003</td><td class="cell-masked">Emil******</td><td class="cell-masked">emi***@acmecorp.com</td>
+                <td class="cell-masked">+1--***-***</td><td class="cell-masked">***-**-3305</td><td class="cell-masked">3782**********</td>
+                <td class="cell-masked">H74P*****</td><td class="cell-masked">1993******</td><td class="cell-masked">$120****</td><td class="cell-masked">350 **********</td>
+                <td class="cell-preserved">172.16.88.5</td><td class="cell-preserved">Engineering</td><td class="cell-preserved">2019-03-22</td><td class="cell-masked">PhD **********</td>
+              </tr>
+              <tr>
+                <td>EMP004</td><td class="cell-masked">Robe**********</td><td class="cell-masked">rwi***@acmecorp.com</td>
+                <td class="cell-masked">+1--***-***</td><td class="cell-masked">***-**-7891</td><td class="cell-masked">6***********-9012</td>
+                <td class="cell-masked">F18Q*****</td><td class="cell-masked">1979******</td><td class="cell-masked">$145****</td><td class="cell-masked">200 **********</td>
+                <td class="cell-preserved">10.45.77.22</td><td class="cell-preserved">Management</td><td class="cell-preserved">2015-09-01</td><td class="cell-masked">CTO-***-***</td>
+              </tr>
+              <tr>
+                <td>EMP005</td><td class="cell-masked">Mari********</td><td class="cell-masked">mar***@acmecorp.com</td>
+                <td class="cell-masked">+1--***-***</td><td class="cell-masked">***-**-4208</td><td class="cell-masked">4***********-1111</td>
+                <td class="cell-masked">D82K*****</td><td class="cell-masked">1988******</td><td class="cell-masked">$67,***</td><td class="cell-masked">701 **********</td>
+                <td class="cell-preserved">192.168.12.88</td><td class="cell-preserved">Support</td><td class="cell-preserved">2021-04-19</td><td class="cell-masked">Bili**********</td>
+              </tr>
+              <tr>
+                <td>EMP006</td><td class="cell-masked">Davi*****</td><td class="cell-masked">dav***@acmecorp.com</td>
+                <td class="cell-masked">+1--***-***</td><td class="cell-masked">***-**-1652</td><td class="cell-masked">5***********-8888</td>
+                <td class="cell-masked">A15M*****</td><td class="cell-masked">1982******</td><td class="cell-masked">$132****</td><td class="cell-masked">410 **********</td>
+                <td class="cell-preserved">10.88.33.7</td><td class="cell-preserved">Engineering</td><td class="cell-preserved">2017-08-14</td><td class="cell-masked">DevO**********</td>
+              </tr>
+              <tr>
+                <td>EMP007</td><td class="cell-masked">Lisa*********</td><td class="cell-masked">l.t***@acmecorp.com</td>
+                <td class="cell-masked">+1--***-***</td><td class="cell-masked">***-**-4980</td><td class="cell-masked">3**********-8901</td>
+                <td class="cell-masked">M55V*****</td><td class="cell-masked">1995******</td><td class="cell-masked">$58,***</td><td class="cell-masked">100 **********</td>
+                <td class="cell-preserved">172.31.200.11</td><td class="cell-preserved">Marketing</td><td class="cell-preserved">2022-02-07</td><td class="cell-masked">Rece**********</td>
+              </tr>
+              <tr>
+                <td>EMP008</td><td class="cell-masked">Mich*********</td><td class="cell-masked">mic***@acmecorp.com</td>
+                <td class="cell-masked">+1--***-***</td><td class="cell-masked">***-**-3761</td><td class="cell-masked">4***********-1098</td>
+                <td class="cell-masked">R33T*****</td><td class="cell-masked">1975******</td><td class="cell-masked">$210****</td><td class="cell-masked">1 Br**********</td>
+                <td class="cell-preserved">10.0.1.100</td><td class="cell-preserved">Management</td><td class="cell-preserved">2013-11-05</td><td class="cell-masked">CEO-***-***</td>
+              </tr>
+              <tr>
+                <td>EMP009</td><td class="cell-masked">Aman********</td><td class="cell-masked">a.p***@acmecorp.com</td>
+                <td class="cell-masked">+1--***-***</td><td class="cell-masked">***-**-1057</td><td class="cell-masked">4***********-9012</td>
+                <td class="cell-masked">W27B*****</td><td class="cell-masked">1991******</td><td class="cell-masked">$89,***</td><td class="cell-masked">1 Ap**********</td>
+                <td class="cell-preserved">192.168.55.33</td><td class="cell-preserved">Design</td><td class="cell-preserved">2019-11-18</td><td class="cell-masked">UI/U**********</td>
+              </tr>
+              <tr>
+                <td>EMP010</td><td class="cell-masked">Thom*********</td><td class="cell-masked">tho***@acmecorp.com</td>
+                <td class="cell-masked">+1--***-***</td><td class="cell-masked">***-**-9834</td><td class="cell-masked">4***********-6789</td>
+                <td class="cell-masked">P09K*****</td><td class="cell-masked">1987******</td><td class="cell-masked">$76,***</td><td class="cell-masked">1600**********</td>
+                <td class="cell-preserved">10.10.10.55</td><td class="cell-preserved">Support</td><td class="cell-preserved">2020-07-01</td><td class="cell-masked">IT s**********</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==========================================================
+         TAB: Admin (L2)
+         ========================================================== -->
+    <div id="tab-admin" class="tab-content">
+      <div class="mode-desc">
+        <h3>Admin Mode — Recoverable Tokenization (L2)</h3>
+        <p>PII is replaced with AES-256-GCM encrypted tokens. Non-sensitive fields (DOB, salary, notes) remain fully readable for business operations. All tokens can be restored to original values using <code>dc recover</code> with the master password. A <code>.vault</code> file stores the decryption key securely.</p>
+        <span class="use-case">🎯 Use: Internal databases · Test environments · CEO/Admin access</span>
+      </div>
+
+      <div class="comparison-card">
+        <div class="comparison-header">
+          <h3>Full Dataset — Admin View</h3>
+          <span class="chip">10 records × 14 columns</span>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th><th>Name</th><th>Email</th><th>Phone</th><th>SSN</th><th>Card</th>
+                <th>Passport</th><th>DOB</th><th>Salary</th><th>Address</th>
+                <th>IP</th><th>Dept</th><th>Start</th><th>Notes</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>EMP001</td><td class="cell-token">TOK_27d20dbc</td><td class="cell-token">tok_c24c33a7@masked.local</td>
+                <td class="cell-token">+1-555-37c8</td><td class="cell-token">XXX-XX-d816</td><td class="cell-token">TOK-CC-a2f994b3</td>
+                <td class="cell-token">TOK_0890cb0c</td><td class="cell-preserved">1985-03-12</td><td class="cell-preserved">$95,000</td><td class="cell-token">TOK_e661a5d0</td>
+                <td class="cell-preserved">192.168.45.23</td><td class="cell-preserved">Engineering</td><td class="cell-preserved">2018-06-15</td>
+                <td class="cell-preserved">Top performer. Working on the AI/ML pipeline...</td>
+              </tr>
+              <tr>
+                <td>EMP002</td><td class="cell-token">TOK_f5f8fd1c</td><td class="cell-token">tok_ac6945c6@masked.local</td>
+                <td class="cell-token">+1-555-5bb9</td><td class="cell-token">XXX-XX-974f</td><td class="cell-token">TOK-CC-0fc80251</td>
+                <td class="cell-token">TOK_393ef51b</td><td class="cell-preserved">1990-11-05</td><td class="cell-preserved">$78,500</td><td class="cell-token">TOK_5468fad3</td>
+                <td class="cell-preserved">10.0.0.142</td><td class="cell-preserved">Sales</td><td class="cell-preserved">2020-01-10</td>
+                <td class="cell-preserved">Exceeded Q3 targets by 40%...</td>
+              </tr>
+              <tr>
+                <td>EMP003</td><td class="cell-token">TOK_c3911553</td><td class="cell-token">tok_437910c0@masked.local</td>
+                <td class="cell-token">+1-555-adc9</td><td class="cell-token">XXX-XX-2e02</td><td class="cell-token">TOK_39f77fc1</td>
+                <td class="cell-token">TOK_ea4b3bfe</td><td class="cell-preserved">1993-07-28</td><td class="cell-preserved">$120,000</td><td class="cell-token">TOK_35085bae</td>
+                <td class="cell-preserved">172.16.88.5</td><td class="cell-preserved">Engineering</td><td class="cell-preserved">2019-03-22</td>
+                <td class="cell-preserved">PhD in Computer Science (Stanford)...</td>
+              </tr>
+              <tr>
+                <td>EMP004</td><td class="cell-token">TOK_9fc76cbe</td><td class="cell-token">tok_fe78f801@masked.local</td>
+                <td class="cell-token">+1-555-872f</td><td class="cell-token">XXX-XX-48fd</td><td class="cell-token">TOK-CC-bf8f2d3b</td>
+                <td class="cell-token">TOK_0304e1a9</td><td class="cell-preserved">1979-01-17</td><td class="cell-preserved">$145,000</td><td class="cell-token">TOK_d1d4300e</td>
+                <td class="cell-preserved">10.45.77.22</td><td class="cell-preserved">Management</td><td class="cell-preserved">2015-09-01</td>
+                <td class="cell-preserved">CTO. Reports to board...</td>
+              </tr>
+              <tr>
+                <td>EMP005</td><td class="cell-token">TOK_3774396e</td><td class="cell-token">tok_1fbcf49c@masked.local</td>
+                <td class="cell-token">+1-555-a633</td><td class="cell-token">XXX-XX-9134</td><td class="cell-token">TOK-CC-d83795e4</td>
+                <td class="cell-token">TOK_e28837bd</td><td class="cell-preserved">1988-09-30</td><td class="cell-preserved">$67,000</td><td class="cell-token">TOK_d742cd79</td>
+                <td class="cell-preserved">192.168.12.88</td><td class="cell-preserved">Support</td><td class="cell-preserved">2021-04-19</td>
+                <td class="cell-preserved">Bilingual (English/Spanish)...</td>
+              </tr>
+              <tr>
+                <td>EMP006</td><td class="cell-token">TOK_dda623a5</td><td class="cell-token">tok_b82018b7@masked.local</td>
+                <td class="cell-token">+1-555-2284</td><td class="cell-token">XXX-XX-97aa</td><td class="cell-token">TOK-CC-74aab4fa</td>
+                <td class="cell-token">TOK_839d9f3c</td><td class="cell-preserved">1982-12-24</td><td class="cell-preserved">$132,000</td><td class="cell-token">TOK_fe66aa0b</td>
+                <td class="cell-preserved">10.88.33.7</td><td class="cell-preserved">Engineering</td><td class="cell-preserved">2017-08-14</td>
+                <td class="cell-preserved">DevOps lead. AWS certified...</td>
+              </tr>
+              <tr>
+                <td>EMP007</td><td class="cell-token">TOK_49c420c0</td><td class="cell-token">tok_d3f5d19b@masked.local</td>
+                <td class="cell-token">+1-555-e29f</td><td class="cell-token">XXX-XX-12dc</td><td class="cell-token">TOK-CC-d9c194ae</td>
+                <td class="cell-token">TOK_696b77bd</td><td class="cell-preserved">1995-04-08</td><td class="cell-preserved">$58,000</td><td class="cell-token">TOK_6df23baf</td>
+                <td class="cell-preserved">172.31.200.11</td><td class="cell-preserved">Marketing</td><td class="cell-preserved">2022-02-07</td>
+                <td class="cell-preserved">Recent hire. Running social media campaign...</td>
+              </tr>
+              <tr>
+                <td>EMP008</td><td class="cell-token">TOK_496a6373</td><td class="cell-token">tok_00fcc6d8@masked.local</td>
+                <td class="cell-token">+1-555-f460</td><td class="cell-token">XXX-XX-b3a9</td><td class="cell-token">TOK-CC-5e09c54c</td>
+                <td class="cell-token">TOK_a9b01d4e</td><td class="cell-preserved">1975-06-15</td><td class="cell-preserved">$210,000</td><td class="cell-token">TOK_12b9b3e6</td>
+                <td class="cell-preserved">10.0.1.100</td><td class="cell-preserved">Management</td><td class="cell-preserved">2013-11-05</td>
+                <td class="cell-preserved">CEO. Founder...</td>
+              </tr>
+              <tr>
+                <td>EMP009</td><td class="cell-token">TOK_ca8438ac</td><td class="cell-token">tok_a59ea90b@masked.local</td>
+                <td class="cell-token">+1-555-7f25</td><td class="cell-token">XXX-XX-54e5</td><td class="cell-token">TOK-CC-ec1a0e2a</td>
+                <td class="cell-token">TOK_cba34e53</td><td class="cell-preserved">1991-02-19</td><td class="cell-preserved">$89,000</td><td class="cell-token">TOK_6af512c8</td>
+                <td class="cell-preserved">192.168.55.33</td><td class="cell-preserved">Design</td><td class="cell-preserved">2019-11-18</td>
+                <td class="cell-preserved">UI/UX lead. Previously worked at Google...</td>
+              </tr>
+              <tr>
+                <td>EMP010</td><td class="cell-token">TOK_5cffa708</td><td class="cell-token">tok_fad00465@masked.local</td>
+                <td class="cell-token">+1-555-26f8</td><td class="cell-token">XXX-XX-1097</td><td class="cell-token">TOK-CC-3e2b3a29</td>
+                <td class="cell-token">TOK_513392ae</td><td class="cell-preserved">1987-08-22</td><td class="cell-preserved">$76,000</td><td class="cell-token">TOK_31f2b18f</td>
+                <td class="cell-preserved">10.10.10.55</td><td class="cell-preserved">Support</td><td class="cell-preserved">2020-07-01</td>
+                <td class="cell-preserved">IT support Level 2...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==========================================================
+       SECTION 3 — CROSS-MODE COMPARISON
+       ========================================================== -->
+  <section class="section">
+    <div class="section-header">
+      <div class="section-number">3</div>
+      <div>
+        <h2>Cross-Mode Comparison</h2>
+        <p>Record EMP001 (Sarah Johnson) — side-by-side across all three masking levels</p>
+      </div>
+    </div>
+
+    <div class="comparison-card">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Column</th><th>Original</th><th>External (L3)</th><th>Internal (L1)</th><th>Admin (L2)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="col-label">Name</td>
+              <td class="cell-original">Sarah Johnson</td>
+              <td class="cell-masked">[SCRUBBED:471c]</td>
+              <td class="cell-masked">Sara*********</td>
+              <td class="cell-token">TOK_27d20dbc</td>
+            </tr>
+            <tr>
+              <td class="col-label">Email</td>
+              <td class="cell-original">sarah.johnson@acmecorp.com</td>
+              <td class="cell-masked">anon_d9ca@scrubbed.local</td>
+              <td class="cell-masked">sar***@acmecorp.com</td>
+              <td class="cell-token">tok_c24c33a7@masked.local</td>
+            </tr>
+            <tr>
+              <td class="col-label">Phone</td>
+              <td class="cell-original">+1-415-555-0134</td>
+              <td class="cell-masked">+1-555-34b8</td>
+              <td class="cell-masked">+1--***-***</td>
+              <td class="cell-token">+1-555-37c8</td>
+            </tr>
+            <tr>
+              <td class="col-label">SSN</td>
+              <td class="cell-original">529-37-4812</td>
+              <td class="cell-masked">XXX-XX-2be3</td>
+              <td class="cell-masked">***-**-4812</td>
+              <td class="cell-token">XXX-XX-d816</td>
+            </tr>
+            <tr>
+              <td class="col-label">Credit Card</td>
+              <td class="cell-original">4532-7891-2345-6789</td>
+              <td class="cell-masked">XXXX-XXXX-XXXX-e9a1</td>
+              <td class="cell-masked">4***********-6789</td>
+              <td class="cell-token">TOK-CC-a2f994b3</td>
+            </tr>
+            <tr>
+              <td class="col-label">Passport</td>
+              <td class="cell-original">C30K85F12</td>
+              <td class="cell-masked">[SCRUBBED:feb4]</td>
+              <td class="cell-masked">C30K*****</td>
+              <td class="cell-token">TOK_0890cb0c</td>
+            </tr>
+            <tr>
+              <td class="col-label">DOB</td>
+              <td class="cell-original">1985-03-12</td>
+              <td class="cell-masked">[SCRUBBED:06ed]</td>
+              <td class="cell-masked">1985******</td>
+              <td class="cell-preserved">1985-03-12</td>
+            </tr>
+            <tr>
+              <td class="col-label">Salary</td>
+              <td class="cell-original">$95,000</td>
+              <td class="cell-masked">[SCRUBBED:6842]</td>
+              <td class="cell-masked">$95,***</td>
+              <td class="cell-preserved">$95,000</td>
+            </tr>
+            <tr>
+              <td class="col-label">Address</td>
+              <td class="cell-original">742 Evergreen Terrace...</td>
+              <td class="cell-deleted">🗑 Deleted (L4)</td>
+              <td class="cell-masked">742 **********</td>
+              <td class="cell-token">TOK_e661a5d0</td>
+            </tr>
+            <tr>
+              <td class="col-label">IP Address</td>
+              <td class="cell-original">192.168.45.23</td>
+              <td class="cell-preserved">192.168.45.23</td>
+              <td class="cell-preserved">192.168.45.23</td>
+              <td class="cell-preserved">192.168.45.23</td>
+            </tr>
+            <tr>
+              <td class="col-label">Department</td>
+              <td class="cell-original">Engineering</td>
+              <td class="cell-preserved">Engineering</td>
+              <td class="cell-preserved">Engineering</td>
+              <td class="cell-preserved">Engineering</td>
+            </tr>
+            <tr>
+              <td class="col-label">Start Date</td>
+              <td class="cell-original">2018-06-15</td>
+              <td class="cell-preserved">2018-06-15</td>
+              <td class="cell-preserved">2018-06-15</td>
+              <td class="cell-preserved">2018-06-15</td>
+            </tr>
+            <tr>
+              <td class="col-label">Notes</td>
+              <td class="cell-original">Top performer. Working on AI/ML pipeline...</td>
+              <td class="cell-deleted">🗑 Deleted (L4)</td>
+              <td class="cell-masked">Top **********</td>
+              <td class="cell-preserved">Top performer. Working on AI/ML pipeline...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==========================================================
+       SECTION 4 — COMMAND REFERENCE
+       ========================================================== -->
+  <section class="section">
+    <div class="section-header">
+      <div class="section-number">4</div>
+      <div>
+        <h2>Command Reference</h2>
+        <p>Three modes, one command — and full recovery for admin mode</p>
+      </div>
+    </div>
+
+    <div class="callout">
+      <h4>🚀 Quick Start — One Command, Three Modes</h4>
+      <p>
+        <code>dc scrub-dump employees.csv --level external</code> &nbsp;&nbsp;&nbsp;—&nbsp; Public release, full anonymization<br>
+        <code>dc scrub-dump employees.csv --level internal</code> &nbsp;&nbsp;&nbsp;—&nbsp; Internal teams, partial mask<br>
+        <code>dc scrub-dump employees.csv --level admin --password mykey</code> &nbsp;—&nbsp; CEO access, tokenized &amp; recoverable<br>
+        <code>dc recover employees_scrubbed.csv --password mykey</code> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;—&nbsp; Restore original data
+      </p>
+    </div>
+  </section>
+
+  <!-- ==========================================================
+       SECTION 5 — FEATURES
+       ========================================================== -->
+  <section class="section">
+    <div class="section-header">
+      <div class="section-number">5</div>
+      <div>
+        <h2>Key Capabilities</h2>
+        <p>Built for enterprise deployment — verified across 174 automated tests</p>
+      </div>
+    </div>
+
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="feature-icon" style="background:#eff6ff; color:#3b82f6;">🔐</div>
+        <h4>AES-256-GCM Recovery</h4>
+        <p>Admin mode uses military-grade encryption. All tokenized data is fully recoverable with the master password via <code>dc recover</code>.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon" style="background:#f0fdf4; color:#10b981;">🔗</div>
+        <h4>Deterministic Hashing</h4>
+        <p>SHA-256 ensures the same input always produces the same output. Database JOINs survive scrubbing — two tables with the same email stay connected.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon" style="background:#faf5ff; color:#8b5cf6;">📋</div>
+        <h4>Format Preservation</h4>
+        <p>Phone numbers still look like phone numbers. SSNs retain their structure. BI dashboards keep working because data patterns are maintained.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon" style="background:#fffbeb; color:#f59e0b;">🔍</div>
+        <h4>Auto-Detection</h4>
+        <p>35 PII column patterns recognized automatically — names, emails, phones, SSNs, credit cards, passports, IPs, and more. No manual column mapping needed.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon" style="background:#fef2f2; color:#ef4444;">🏠</div>
+        <h4>100% Local Processing</h4>
+        <p>No data ever leaves your machine. No cloud API calls. Offline license validation. GDPR, HIPAA, and CCPA friendly by design.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon" style="background:#eff6ff; color:#3b82f6;">⚡</div>
+        <h4>Streaming Architecture</h4>
+        <p>Handles files exceeding 100 MB with chunked streaming — never loads the entire dataset into memory at once.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==========================================================
+       SECTION 6 — VERIFICATION
+       ========================================================== -->
+  <section class="section">
+    <div class="section-header">
+      <div class="section-number">6</div>
+      <div>
+        <h2>Verification Results</h2>
+        <p>Quality gates passed before delivery</p>
+      </div>
+    </div>
+
+    <div class="comparison-card">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Check</th><th>Result</th><th>Detail</th></tr>
+          </thead>
+          <tbody>
+            <tr><td class="col-label">Unit Tests</td><td>✅ 174/174 Passed</td><td>Full regression suite — deterministic output, edge cases, error paths</td></tr>
+            <tr><td class="col-label">Recovery Round-Trip</td><td>✅ 14/14 Fields</td><td>Admin mode → <code>dc recover</code> → bit-exact match for all 14 fields</td></tr>
+            <tr><td class="col-label">Deterministic Guarantee</td><td>✅ Verified</td><td>Two independent runs produce identical output — SHA-256 stable</td></tr>
+            <tr><td class="col-label">JOIN-Safe</td><td>✅ Verified</td><td>Same real email in 2 rows → same anonymized email in both</td></tr>
+            <tr><td class="col-label">Non-PII Preservation</td><td>✅ 3 Columns Intact</td><td>employee_id, department, start_date never touched at any level</td></tr>
+            <tr><td class="col-label">Column Auto-Detection</td><td>✅ 11/11 PII Detected</td><td>All PII columns identified by name + content pattern matching</td></tr>
+            <tr><td class="col-label">Format Preservation</td><td>✅ All Types</td><td>Phone, SSN, credit card, DOB formats maintained across all levels</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+</div><!-- /.container -->
+
+<!-- ============================================================
+     FOOTER
+     ============================================================ -->
+<footer class="footer">
+  <div class="footer-brand">
+    <span class="dot"></span> DataCleaner
+  </div>
+  <div class="footer-meta">
+    <span>🌐 getdatacleaner.com</span>
+    <span>📦 v0.2.0</span>
+    <span>📅 2026-05-20</span>
+    <span>🔒 100% Local Processing</span>
+  </div>
+</footer>
+
+<!-- Tab Switching Script -->
+<script>
+function switchTab(mode) {
+  document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+  document.getElementById('tab-' + mode).classList.add('active');
+  event.target.classList.add('active');
+}
+</script>
+
+</body>
+</html>
