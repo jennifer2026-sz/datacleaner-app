@@ -39,6 +39,29 @@ _STREAM_CHUNK_ROWS = 10000
 PII_COLUMN_THRESHOLD = 0.3
 SAMPLE_SIZE = 100  # rows to sample per column
 
+# Column names that are always PII regardless of content sampling
+_KNOWN_PII_COLUMNS = {
+    # Personal identifiers
+    "full_name", "first_name", "last_name", "name", "person_name",
+    "email", "email_address", "e_mail", "mail",
+    "phone", "phone_number", "mobile", "cell", "fax",
+    "ssn", "social_security", "social_security_number", "national_id",
+    "passport", "passport_number",
+    "credit_card", "credit_card_number", "cc_number", "card_number",
+    # Financial
+    "salary", "income", "wage", "bank_account", "account_number",
+    "iban", "swift", "routing_number",
+    # Location
+    "address", "street_address", "home_address", "postal_address",
+    "zip_code", "postal_code", "zipcode",
+    # Personal data
+    "dob", "date_of_birth", "birth_date",
+    "ip_address", "ip", "mac_address",
+    "passport_number", "driver_license", "dl_number",
+    # Sensitive text
+    "notes", "comments", "medical_history", "health_info",
+}
+
 
 def _hash_value(value: str, salt: str = "dc-scrub-v1") -> str:
     """Deterministic hash for consistent anonymization.
@@ -105,6 +128,11 @@ def classify_columns(rows: list[dict], headers: list[str]) -> dict[str, bool]:
     column_status = {}
 
     for header in headers:
+        # Fast path: known PII column name
+        if header.lower() in _KNOWN_PII_COLUMNS:
+            column_status[header] = True
+            continue
+
         pii_hits = 0
         non_empty = 0
         for row in sample:

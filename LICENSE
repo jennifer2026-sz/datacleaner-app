@@ -146,5 +146,26 @@ requests:
   GitHub:  https://github.com/jennifer2026-sz/datacleaner-app
 
 ================================================================
+10. ENCRYPTION NOTICE
+================================================================
+
+This software includes the SHA-256 cryptographic hash algorithm, which
+is a publicly available standard (FIPS 180-4, NIST) and is NOT classified
+as controlled encryption under U.S. Export Administration Regulations
+(EAR) Category 5 Part 2.
+
+SHA-256 is used solely for deterministic data anonymization (PII hashing),
+not for encrypting communications or hiding information. Per EAR 742.15(b)(3),
+software implementing only publicly available cryptographic standards for
+non-encryption purposes is classified as EAR99 (no export license required).
+
+This software is NOT authorized for download or use in countries subject to
+U.S. embargo (currently: Cuba, Iran, North Korea, Syria, and the Crimea
+region of Ukraine). By downloading this software, you certify that you are
+not located in any of these jurisdictions.
+
+For questions about export classification: contact@getdatacleaner.com
+
+================================================================
 END OF LICENSE
 ================================================================
