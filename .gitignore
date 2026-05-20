@@ -52,3 +52,37 @@ datacleaner.egg-info/
 
 # Internal planning / receipts
 04_收款与合规/
+
+# === SECURITY: Encryption & Key Material ===
+# NEVER commit vault files — they contain AES-256 encrypted token mappings
+*.vault
+*.key
+*.pem
+*.pfx
+*.p12
+*.jks
+*.keystore
+
+# === SECURITY: Demo/Test Output Files ===
+# Scrubbed output files are regenerated on demand — not source code
+# Keep *original.csv (synthetic demo data) but exclude output artifacts
+*_scrubbed.csv
+*_recovered.csv
+*_external.csv
+*_internal.csv
+*_admin.csv
+
+# === SECURITY: Credentials & Secrets ===
+.env
+.env.*
+*.env
+credentials.json
+auth.json
+*.token
+secrets.yaml
+secrets.yml
+
+# === SECURITY: Database Dumps ===
+*.sql.gz
+*.dump
+*.bak
