@@ -1,26 +1,88 @@
 # 🔒 DataCleaner CLI
 
-**Deterministic Data Reconstruction — Scrubbed Data That Still Works**
+**5-Level PII Masking — Scrub Once, Share Three Ways**
 
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org)
 [![License](https://img.shields.io/badge/license-Source%20Available-blue.svg)](LICENSE)
-[![Powered by Ollama](https://img.shields.io/badge/powered-Ollama-orange.svg)](https://ollama.ai)
-[![GPU: Local](https://img.shields.io/badge/GPU-Local%20RTX-purple.svg)]()
-[![Tests: 148/148](https://img.shields.io/badge/tests-148%2F148-brightgreen.svg)]()
+[![Tests](https://img.shields.io/badge/tests-174%2F174-brightgreen.svg)]()
+[![GitHub stars](https://img.shields.io/github/stars/jennifer2026-sz/datacleaner-app?style=flat)]()
 
 ---
 
-## 🎯 What It Does
+## What It Does
 
-DataCleaner doesn't just **erase** sensitive data — it **reconstructs** it.
-Scrubbed emails, phones, and IDs stay **consistent across tables**.
-Your JOINs still work. Your BI dashboards still render. Your test suite still passes.
+One CLI command, three different outputs — depending on who's looking at the data.
+
+```bash
+# Public release — full SHA-256 anonymization, irreversible
+dc scrub-dump employees.csv --level external
+
+# Internal teams — partial mask, business-readable
+dc scrub-dump employees.csv --level internal
+
+# CEO access — AES-256 tokenization, fully recoverable
+dc scrub-dump employees.csv --level admin --password "master-key"
+dc recover employees_scrubbed.csv --password "master-key"
+```
+
+Same employee record under each mode:
+
+| Column | Original | External | Internal | Admin |
+|--------|----------|----------|----------|-------|
+| email | sarah@acme.com | `anon_d9ca@scrubbed.local` | `sar***@acmecorp.com` | `tok_c24c@masked.local` |
+| phone | +1-415-555-0134 | `+1-555-34b8` | `+1--***-***` | `+1-555-37c8` |
+| ssn | 529-37-4812 | `XXX-XX-2be3` | `***-**-4812` | `XXX-XX-d816` |
+| salary | $95,000 | `[SCRUBBED]` | `$95,***` | `$95,000` |
+| dept | Engineering | Engineering | Engineering | Engineering |
+
+- **External** = irreversible, compliance-safe, JOIN-safe (SHA-256 deterministic)
+- **Internal** = business-readable, partial mask, team-friendly
+- **Admin** = tokenized, AES-256-GCM encrypted, recoverable with password
 
 Everything runs **entirely on your machine** — no cloud, no API calls, no data leakage.
 
-```bash
-$ dc scrub-dump production_export.csv
+---
 
+## Open Core vs Pro/Team
+
+| Feature | Open Core | Pro ($149) | Team ($399) |
+|---------|-----------|------------|-------------|
+| Regex PII detection (50+ patterns) | ✅ | ✅ | ✅ |
+| L0-L4 Tiered masking engine | ✅ | ✅ | ✅ |
+| Deterministic SHA-256 hashing | ✅ | ✅ | ✅ |
+| Database dump scrubbing (CSV/SQL/JSON) | ✅ | ✅ | ✅ |
+| AES-256 admin mode + recovery | ✅ | ✅ | ✅ |
+| Offline license validation | ✅ | ✅ | ✅ |
+| LLM contextual detection | ❌ | ✅ | ✅ |
+| PDF/DOCX/XLSX support | ❌ | ✅ | ✅ |
+| Parallel batch processing | ❌ | ✅ | ✅ |
+| Custom PII pattern editor | ❌ | ❌ | ✅ |
+| Docker deployment image | ❌ | ❌ | ✅ |
+| Priority support | ❌ | ❌ | ✅ |
+| Commercial use license | ❌ | ✅ | ✅ |
+
+👉 **[Buy Pro ($149) or Team ($399) on Gumroad](https://galaxycontent.gumroad.com/l/qhfjnh)**
+One-time purchase. Perpetual license. Optional $49/year update renewal.
+
+---
+
+## Quick Start
+
+### Install
+
+```bash
+git clone https://github.com/jennifer2026-sz/datacleaner-app.git
+cd datacleaner-app
+pip install -e .
+```
+
+### Scrub a CSV
+
+```bash
+dc scrub-dump production_export.csv --level external
+```
+
+```
   Scrubbing dump: production_export.csv
   Format: csv | Style: placeholder
   Rows: 50,000 | Columns: 18
@@ -29,9 +91,8 @@ $ dc scrub-dump production_export.csv
   email      SENSITIVE  email
   phone      SENSITIVE  phone_us
   ssn        SENSITIVE  ssn
-  name       clean      -
 
-  Phase 2: Scrubbing 3 sensitive column(s)...
+  Phase 2: Scrubbing 3 sensitive column(s) (mode=external)...
   ✓ email: 50,000 cells scrubbed
   ✓ phone: 49,872 cells scrubbed
   ✓ ssn: 48,310 cells scrubbed
@@ -40,188 +101,89 @@ $ dc scrub-dump production_export.csv
   │ ✓ Scrubbing complete             │
   │   50,000 rows × 18 columns       │
   │   3 sensitive columns found      │
-  │   148,182 cells anonymized        │
+  │   148,182 cells anonymized       │
   │   Output: production_scrubbed.csv │
   ╰──────────────────────────────────╯
 ```
 
-## 🧠 The Key Difference: Why "Scrubbed" ≠ "Broken"
+### Activate Pro/Team License
+
+```bash
+dc license activate YOUR-LICENSE-KEY
+```
+
+Validation is fully offline — no phone-home, no internet required.
+
+---
+
+## Why Deterministic Hashing Matters
 
 Most anonymization tools generate **random** fake values. This destroys referential integrity:
 
 ```
-patients.email = "anon_a1b2@test"     ← random
-appointments.contact = "anon_c3d4@test" ← different random value
+patients.email = "anon_a1b2@test"        ← random
+appointments.contact = "anon_c3d4@test"   ← different random
 
-Result: JOIN queries on patient_id return garbage.
+Result: JOIN queries return garbage.
 ```
 
-**DataCleaner uses SHA-256 deterministic hashing:**
-Same input → same fake output. Every time. Across every table. Across every run.
+DataCleaner uses **SHA-256 deterministic hashing** — same input → same output, every time:
 
 ```
-patients.email = j@real.com → anon_b4f6@scrubbed.local
-appointments.contact = j@real.com → anon_b4f6@scrubbed.local
-                               ↑ IDENTICAL. JOIN works. BI works.
+patients.email = sarah@acme.com       → anon_d9ca@scrubbed.local
+appointments.contact = sarah@acme.com → anon_d9ca@scrubbed.local
+                                         ↑ IDENTICAL. JOINs survive.
 ```
 
-No mapping table to maintain. No sync service to run. Just math.
-
-## 🚀 Quick Start
-
-### Prerequisites
-
-- Python 3.10+
-- [Ollama](https://ollama.ai) with a model (recommended: `qwen3.5:9b`)
-- NVIDIA GPU recommended (works on CPU too, just slower)
-
-### Install
-
-```bash
-# Install Ollama and pull a model
-ollama serve
-ollama pull qwen3.5:9b
-
-# Install DataCleaner
-pip install datacleaner
-
-# Or from source
-git clone https://github.com/jennifer2026-sz/datacleaner-app.git
-cd datacleaner-cli
-pip install -e .
-```
-
-### Common Workflows
-
-```bash
-# Scan a single file (regex only, zero cost)
-dc scan document.pdf --no-llm
-
-# Deep scan with local LLM (catches names, addresses, context)
-dc scan ./contracts/ --redact -o ./clean/
-
-# Scrub a database dump (CSV, SQL, JSON)
-dc scrub-dump production_backup.csv -o safe_data.csv
-
-# Scrub with format-preserving anonymization
-dc scrub-dump users.json --style placeholder
-
-# View audit history
-dc audit
-
-# Check license status
-dc license status
-```
-
-## 📋 Supported Formats
-
-| Format | Extensions | Notes |
-|--------|-----------|-------|
-| PDF | `.pdf` | Text + scanned (PyMuPDF) |
-| Word | `.docx` | Tables included |
-| Excel | `.xlsx`, `.xls` | All sheets |
-| CSV | `.csv` | Auto-detects encoding |
-| JSON | `.json` | Array of objects |
-| SQL Dump | `.sql` | INSERT statements |
-| Plain text | `.txt`, `.md`, `.xml`, `.html`, `.log` | UTF-8/GBK/Latin-1 |
-
-## 🔍 What It Detects
-
-### Regex Pass (instant, 50+ patterns)
-- ✉️ Email addresses
-- 📱 Phone numbers (US, UK, EU, China)
-- 💳 Credit card numbers (Visa, MC, Amex, Discover)
-- 🆔 SSN, National Insurance, China ID
-- 🏦 IBAN, SWIFT/BIC codes
-- 🌐 IPv4, IPv6 addresses
-- 🔑 API keys, tokens, passwords
-- 📍 US ZIP, UK Postcode
-
-### LLM Pass (contextual, requires Ollama)
-- 👤 Person names in natural text
-- 🏠 Physical addresses and PO boxes
-- 🏥 Medical information and conditions
-- 💰 Salary figures with context
-- 👨‍👩‍👧 Family member names
-- 🚗 License plates, VIN numbers
-- 🔐 Internal URLs and credentials
-
-## 💰 Pricing
-
-| Tier | Price | What You Get |
-|------|-------|--------------|
-| **Free** | $0 | Regex scanning, audit logs, CSV/JSON/TXT formats |
-| **Pro** | $149 one-time | Full LLM scanning, deterministic hashing, all formats, parallel processing, year 1 updates |
-| **Team** | $399 one-time (5 seats) | Everything in Pro + custom patterns, Docker, priority support |
-
-**Optional: $49/year** (Pro) or **$99/year** (Team) for continued updates after year 1.
-Your license never expires — keep using the version you purchased forever.
-
-[View Pricing →](https://getdatacleaner.com/purchase)
-
-## 🛡️ Privacy & Security
-
-DataCleaner is **local-first by design**:
-- ✅ All processing happens on your machine
-- ✅ Zero telemetry or analytics
-- ✅ No network calls (even license validation is offline)
-- ✅ Audit logs stored locally — **never contain actual PII values**
-- ✅ SHA-256 deterministic hashing — no mapping table to leak
-- ✅ GDPR-friendly: you remain the sole data controller
-
-[Read the full Privacy Policy →](https://getdatacleaner.com/privacy)
-
-## 🏗️ For Developers
-
-```python
-from datacleaner.scanner import scan_text
-from datacleaner.redactor import redact_text
-from datacleaner.commands.scrub_dump import scrub_dump
-
-# Scan text
-result = scan_text("Contact John Smith at john@example.com", use_llm=True)
-print(f"Found {result['stats']['total']} PII instances")
-
-# Redact
-clean = redact_text("Contact John Smith at john@example.com",
-                     result['findings'], style="block")
-print(clean)  # "Contact [REDACTED] at [REDACTED]"
-
-# Scrub a database dump programmatically
-stats = scrub_dump("production.csv", output_path="clean.csv")
-print(f"Scrubbed {stats['total_cells_scrubbed']} cells across {len(stats['sensitive_columns'])} columns")
-```
-
-## 📊 Compliance
-
-DataCleaner generates audit logs suitable for:
-- **GDPR** Article 30 (Records of Processing Activities)
-- **HIPAA** audit trail requirements
-- **CCPA** data inventory
-- **ISO 27001** information security management
-
-Each audit log records: timestamp, file, finding categories, detection methods,
-and confidence scores — **without ever storing the actual PII values**.
-
-## 🗺️ Roadmap
-
-- [x] `dc scrub-dump` — deterministic database dump anonymization
-- [ ] Streaming mode for large files (>100MB)
-- [ ] Custom PII pattern editor
-- [ ] Batch processing with parallel workers
-- [ ] PostgreSQL pg_dump direct integration
-- [ ] Docker image for server deployments
-- [ ] Integration plugins (n8n, Zapier, Make.com)
-
-## 📄 License
-
-Source Available License — see [LICENSE](LICENSE).
-
-Free for personal, educational, and evaluation use. Commercial use beyond the
-Free tier requires a Pro or Team license purchased from
-[getdatacleaner.com](https://getdatacleaner.com). See the
-[EULA](https://getdatacleaner.com/eula) for complete terms.
+No mapping table. No sync service. Just math.
 
 ---
 
-**Made by Jeam | Powered by local GPUs everywhere | Scrubbed data that still works**
+## PII Types Detected
+
+### Regex Pass (instant, 50+ patterns)
+Emails, Phones (US/UK/EU/CN), Credit Cards (Visa/MC/Amex/Discover), SSN, National Insurance, China ID, IBAN, SWIFT/BIC, IPv4/IPv6, API Keys, Tokens, ZIP/Postcode
+
+### Column-Name Auto-Detection (35 patterns)
+full_name, first_name, email, phone, ssn, credit_card, passport, salary, address, ip_address, dob, notes, comments, medical_history, bank_account, iban, swift, driver_license, and more
+
+### LLM Pass (Pro/Team only, runs on local GPU)
+Person names, physical addresses, medical conditions, salary figures, family member names, license plates, VIN numbers, internal URLs
+
+---
+
+## Supported Formats
+
+| Format | Extensions |
+|--------|-----------|
+| CSV | `.csv` |
+| SQL Dump | `.sql` |
+| JSON | `.json` |
+| PDF (Pro/Team) | `.pdf` |
+| Word (Pro/Team) | `.docx` |
+| Excel (Pro/Team) | `.xlsx`, `.xls` |
+| Text | `.txt`, `.md`, `.xml`, `.html`, `.log` |
+
+---
+
+## Privacy & Security
+
+- ✅ All processing on your machine — zero cloud calls
+- ✅ Zero telemetry or analytics
+- ✅ Offline license validation — no phone-home
+- ✅ Audit logs never store actual PII values
+- ✅ GDPR / HIPAA / CCPA / ISO 27001 compliant audit trails
+
+---
+
+## License
+
+Source Available License — see [LICENSE](LICENSE).
+
+Free for personal, educational, and evaluation use.
+Commercial use requires a Pro or Team license from [getdatacleaner.com](https://getdatacleaner.com).
+See [EULA](https://getdatacleaner.com/eula) for complete terms.
+
+---
+
+**Made by Jeam | Scrubbed data that still works**
