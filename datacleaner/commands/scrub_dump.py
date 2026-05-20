@@ -25,6 +25,10 @@ from rich import box
 from datacleaner.scanner import scan_text
 from datacleaner.redactor import redact_text, generate_audit_log, save_audit_log, get_audit_path
 from datacleaner.config import load_config
+from datacleaner.masking import (
+    apply_mask, get_masking_level, TokenVault,
+    L0_PRESERVE, L1_PARTIAL, L2_TOKENIZE, L3_SCRUB, L4_DELETE,
+)
 
 console = Console()
 
@@ -374,27 +378,26 @@ def scrub_dump(
     audit_dir: Optional[str | Path] = None,
     style: str = "placeholder",
     dump_format: Optional[str] = None,
-    no_llm: bool = True,  # Default to regex-only for dump scrubbing (speed)
+    no_llm: bool = True,
     output_json: bool = False,
+    level: str = "internal",
+    password: Optional[str] = None,
 ) -> dict:
-    """Scrub PII from a database dump file.
+    """Scrub PII from a database dump file with tiered masking.
 
     Args:
         input_path: Path to dump file (.csv, .sql, .json)
         output_path: Output path (auto-generated if None)
         audit_dir: Directory for audit logs
-        style: Redaction style
+        style: Redaction style (legacy, overridden by level)
         dump_format: 'csv', 'sql', or None (auto-detect)
         no_llm: Use regex-only for speed (default: True)
         output_json: Output results as JSON
+        level: Masking preset — 'external', 'internal', or 'admin'
+        password: Required for 'admin' level (AES recovery key)
 
     Returns:
-        Stats dict: {
-            "total_rows": int,
-            "sensitive_columns": [str, ...],
-            "total_cells_scrubbed": int,
-            "pii_by_column": {header: count},
-        }
+        Stats dict + vault_path (if admin mode)
     """
     input_path = Path(input_path)
     if not input_path.exists():
@@ -435,6 +438,7 @@ def scrub_dump(
         # Use streaming for CSV: classify on first chunk, then stream-scrub
         stats = _scrub_csv_streaming(
             input_path, output_path, style, audit_base,
+            level=level, password=password,
         )
         if output_json:
             console.print("\n[JSON Output]")
@@ -593,12 +597,14 @@ def _scrub_csv_streaming(
     output_path: Path,
     style: str,
     audit_base: Path,
+    level: str = "internal",
+    password: Optional[str] = None,
 ) -> dict:
-    """Scrub a CSV dump using streaming — never loads entire file into memory.
+    """Scrub a CSV dump using streaming + tiered masking engine.
 
     Two-phase approach using a single iterator:
       1. Read first chunk → classify columns, sample PII types
-      2. Continue same iterator → scrub + write incrementally
+      2. Continue same iterator → scrub (L0-L4) + write incrementally
     """
     from datacleaner.utils.streaming_readers import csv_chunked_reader
 
@@ -642,12 +648,32 @@ def _scrub_csv_streaming(
     console.print(col_table)
 
     # --- Phase 2: stream-scrub ---
-    console.print(f"\n  [bold]Phase 2:[/bold] Scrubbing {len(sensitive_cols)} sensitive column(s) [dim](streaming)[/dim]...")
+    console.print(f"\n  [bold]Phase 2:[/bold] Scrubbing {len(sensitive_cols)} sensitive column(s) [dim](mode={level})[/dim]...")
+
+    # Create vault for admin mode (L2 recoverable)
+    vault = None
+    vault_path = None
+    if level == "admin":
+        if not password:
+            raise ValueError("--password required for admin mode (recoverable tokenization)")
+        vault = TokenVault(password)
+
+    # Resolve masking level per column
+    col_masking_levels = {}
+    deleted_cols = set()
+    for h in sensitive_cols:
+        ml = get_masking_level(h, level)
+        col_masking_levels[h] = ml
+        if ml == L4_DELETE:
+            deleted_cols.add(h)
 
     # Open output file once — wrapped in try/finally for safety
+    # Remove L4_DELETE columns from output
+    write_headers = [h for h in headers if h not in deleted_cols]
+
     output_fh = open(output_path, "w", encoding="utf-8", newline="")
     try:
-        writer = csv.DictWriter(output_fh, fieldnames=headers)
+        writer = csv.DictWriter(output_fh, fieldnames=write_headers, extrasaction='ignore')
         writer.writeheader()
 
         if not sensitive_cols:
@@ -660,7 +686,7 @@ def _scrub_csv_streaming(
                 total_rows += len(batch)
 
             audit_data = _build_audit(input_path, output_path, "csv", style,
-                                      total_rows, headers, sensitive_cols, 0, pii_by_column, column_status)
+                                      total_rows, write_headers, [], 0, {}, column_status)
             audit_path = get_audit_path(input_path, audit_base)
             save_audit_log(audit_data, audit_path)
             console.print(f"  [dim]Audit: {audit_path}[/dim]")
@@ -681,36 +707,48 @@ def _scrub_csv_streaming(
             }
 
         # Has sensitive columns — scrub in streaming mode
-        pii_by_column = {h: 0 for h in sensitive_cols}
+        pii_by_column = {h: 0 for h in sensitive_cols if h not in deleted_cols}
         pii_type_cache: dict[str, str] = {}
 
-        # Process first chunk
+        # Process first chunk with tiered masking
         for row in first_chunk_rows:
             for header in sensitive_cols:
+                if header in deleted_cols:
+                    continue
                 value = str(row.get(header, ""))
                 if not value.strip():
                     continue
                 if value not in pii_type_cache:
                     pii_type_cache[value] = _get_pii_type_for_cell(value) or "generic"
                 pii_type = pii_type_cache[value]
-                row[header] = _generate_fake_value(value, pii_type)
+                ml = col_masking_levels[header]
+                row[header], deleted = apply_mask(value, pii_type, ml, vault)
+                if deleted:
+                    deleted_cols.add(header)
+                    continue
                 pii_by_column[header] += 1
                 total_cells_scrubbed += 1
 
         writer.writerows(first_chunk_rows)
         total_rows += len(first_chunk_rows)
 
-        # Stream remaining chunks from the same iterator
+        # Stream remaining chunks with tiered masking
         for _, batch in chunk_iter:
             for row in batch:
                 for header in sensitive_cols:
+                    if header in deleted_cols:
+                        continue
                     value = str(row.get(header, ""))
                     if not value.strip():
                         continue
                     if value not in pii_type_cache:
                         pii_type_cache[value] = _get_pii_type_for_cell(value) or "generic"
                     pii_type = pii_type_cache[value]
-                    row[header] = _generate_fake_value(value, pii_type)
+                    ml = col_masking_levels[header]
+                    row[header], deleted = apply_mask(value, pii_type, ml, vault)
+                    if deleted:
+                        deleted_cols.add(header)
+                        continue
                     pii_by_column[header] += 1
                     total_cells_scrubbed += 1
 
@@ -724,11 +762,15 @@ def _scrub_csv_streaming(
 
     # Display per-column stats
     for header in sensitive_cols:
+        if header in deleted_cols:
+            console.print(f"  [dim]🗑[/dim] {header}: [dim]deleted[/dim]")
+            continue
         console.print(f"  [green]✓[/green] {header}: [yellow]{pii_by_column[header]}[/yellow] cells scrubbed")
 
     # --- Audit ---
+    active_sensitive = [h for h in sensitive_cols if h not in deleted_cols]
     audit_data = _build_audit(input_path, output_path, "csv", style,
-                              total_rows, headers, sensitive_cols, total_cells_scrubbed,
+                              total_rows, headers, active_sensitive, total_cells_scrubbed,
                               pii_by_column, column_status)
     audit_path = get_audit_path(input_path, audit_base)
     save_audit_log(audit_data, audit_path)
@@ -736,20 +778,33 @@ def _scrub_csv_streaming(
 
     # --- Summary ---
     console.print()
-    console.print(Panel.fit(
-        f"[green]✓ Scrubbing complete[/green]\n"
-        f"  {total_rows} rows × {len(headers)} columns\n"
-        f"  {len(sensitive_cols)} sensitive columns found\n"
-        f"  {total_cells_scrubbed} cells anonymized\n"
+    summary_lines = [
+        f"[green]✓ Scrubbing complete[/green]",
+        f"  {total_rows} rows × {len(write_headers)} columns",
+        f"  {len(active_sensitive)} sensitive columns scrubbed",
+    ]
+    if deleted_cols:
+        summary_lines.append(f"  [dim]{len(deleted_cols)} column(s) deleted[/dim]")
+    summary_lines.extend([
+        f"  {total_cells_scrubbed} cells anonymized",
         f"  Output: {output_path.name}",
-        border_style="green",
-    ))
+    ])
+    console.print(Panel.fit("\n".join(summary_lines), border_style="green"))
+
+    # --- Save vault for admin mode ---
+    if vault is not None:
+        vault_path = vault.save(output_path)
+        console.print(f"  [green]🔑 Recovery vault:[/green] {vault_path}")
+        console.print(f"  [dim]  Use: dc recover {output_path.name} --password <your-password>[/dim]")
 
     return {
         "total_rows": total_rows,
         "sensitive_columns": sensitive_cols,
         "total_cells_scrubbed": total_cells_scrubbed,
         "pii_by_column": pii_by_column,
+        "vault_path": str(vault_path) if vault_path else None,
+        "masking_level": level,
+        "deleted_columns": list(deleted_cols) if deleted_cols else [],
     }
 
 

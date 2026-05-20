@@ -457,18 +457,25 @@ def config():
 @click.option("--style", type=click.Choice(["block", "placeholder", "mask", "partial"]),
               default="placeholder", help="Anonymization style (default: placeholder)")
 @click.option("--json", "output_json", is_flag=True, help="Output stats as JSON")
-def scrub_dump(input_file, output, dump_format, audit_dir, style, output_json):
-    """Scrub PII from a database dump (CSV, SQL, JSON).
+@click.option("--level", type=click.Choice(["external", "internal", "admin"]),
+              default="internal", help="Masking level (default: internal)")
+@click.option("--password", "-p", type=str, default=None,
+              help="Master password for admin mode (L2 recoverable)")
+def scrub_dump(input_file, output, dump_format, audit_dir, style, output_json, level, password):
+    """Scrub PII from a database dump with tiered masking.
 
-    Auto-detects which columns contain PII and replaces sensitive
-    values with consistent, deterministic fake data. All processing
-    is local — zero data leaves your machine.
+    \b
+    Masking levels:
+      external  — Full scrub (SHA-256 irreversible). For public release.
+      internal  — Partial mask (business-readable). For internal teams.
+      admin     — Tokenization (AES-256 recoverable with --password).
 
     \b
     Examples:
-        dc scrub-dump production_export.csv
-        dc scrub-dump backup.sql --format sql
-        dc scrub-dump users.json --style mask -o clean_users.json
+        dc scrub-dump employees.csv --level external
+        dc scrub-dump employees.csv --level internal
+        dc scrub-dump employees.csv --level admin --password mykey
+        dc recover employees_scrubbed.csv --password mykey
     """
     from datacleaner.commands.scrub_dump import scrub_dump as _scrub_dump
 
@@ -480,7 +487,36 @@ def scrub_dump(input_file, output, dump_format, audit_dir, style, output_json):
             style=style,
             dump_format=dump_format,
             output_json=output_json,
+            level=level,
+            password=password,
         )
+    except FileNotFoundError as e:
+        console.print(f"[red]✗ {e}[/red]")
+        sys.exit(1)
+    except Exception as e:
+        console.print(f"[red]✗ Error: {e}[/red]")
+        sys.exit(1)
+
+
+@main.command()
+@click.argument("scrubbed_file", type=click.Path(exists=True))
+@click.option("--password", "-p", required=True, help="Master password used during admin-mode scrubbing")
+@click.option("--output", "-o", type=click.Path(), help="Output path")
+def recover(scrubbed_file, password, output):
+    """Recover original data from admin-mode scrubbed files.
+
+    Requires the .vault file (generated alongside scrubbed output
+    during admin-mode scrubbing) and the master password.
+
+    \b
+    Example:
+        dc recover employees_scrubbed.csv --password mykey
+        dc recover employees_scrubbed.csv --password mykey -o restored.csv
+    """
+    from datacleaner.recover import recover_scrambled
+
+    try:
+        recover_scrambled(scrubbed_file, password, output)
     except FileNotFoundError as e:
         console.print(f"[red]✗ {e}[/red]")
         sys.exit(1)

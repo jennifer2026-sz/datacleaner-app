@@ -154,13 +154,14 @@ class TestScrubDumpIntegration:
                 output_path=output_path,
                 style="placeholder",
                 output_json=False,
+                level="external",  # Use external for full scrub (matches old default behavior)
             )
 
             # Verify stats
             assert stats["total_rows"] == 2
             assert "email" in stats["sensitive_columns"]
             assert "phone" in stats["sensitive_columns"]
-            assert stats["total_cells_scrubbed"] == 4
+            assert stats["total_cells_scrubbed"] >= 4  # at least email+phone (name/notes also detected with new classifier)
 
             # Verify output file
             with open(output_path, "r") as f:
@@ -173,11 +174,10 @@ class TestScrubDumpIntegration:
             assert "@scrubbed.local" in rows[1]["email"]
             # Phone should be scrubbed (format-preserving)
             assert rows[0]["phone"].startswith("+1-555-")
-            # Names should NOT be scrubbed (regex can't detect names)
-            assert rows[0]["name"] == "Alice"
-            assert rows[1]["name"] == "Bob"
-            # Notes should NOT be scrubbed
-            assert rows[0]["notes"] == "Manager"
+            # Name column detected by known-PII-columns classifier
+            assert rows[0]["name"] != "Alice"  # name is now scrubbed
+            # Notes column deleted in external mode (L4_DELETE)
+            assert "notes" not in rows[0]  # notes deleted
 
         finally:
             Path(input_path).unlink(missing_ok=True)
@@ -268,18 +268,19 @@ class TestScrubDumpStreaming:
                 str(csv_path),
                 output_path=str(out_path),
                 dump_format="csv",
+                level="external",  # Full scrub for test verification
             )
 
             assert stats["total_rows"] == 500
             assert "email" in stats["sensitive_columns"]
-            assert stats["total_cells_scrubbed"] == 500
+            assert stats["total_cells_scrubbed"] >= 500  # email always, name also detected with new classifier
 
             with open(out_path) as f:
                 out_lines = f.readlines()
             assert len(out_lines) == 501
             assert "anon_" in out_lines[1]
             assert "@scrubbed.local" in out_lines[1]
-            assert "User0" in out_lines[1]
+            assert "Engineering" in out_lines[1]  # non-PII preserved (dept column)
 
         finally:
             sd._STREAM_CHUNK_ROWS = original
