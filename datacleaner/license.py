@@ -5,6 +5,7 @@ import json
 import time
 from pathlib import Path
 from datacleaner.config import CONFIG_DIR, load_config, save_config
+from datacleaner.revocation import is_revoked
 
 
 LICENSE_FILE = CONFIG_DIR / "license.json"
@@ -38,6 +39,9 @@ def validate_key(key: str) -> dict:
         payload = _decode_payload(key, pro_prefix)
         if payload and payload.get("tier") == "pro":
             if _check_expiry(payload):
+                if is_revoked(key):
+                    return {"valid": False, "tier": "free", "expires": None,
+                            "message": "This license key has been revoked. If you believe this is an error, contact contact@getdatacleaner.com."}
                 expiry_info = ""
                 exp = payload.get("expires")
                 if exp:
@@ -55,6 +59,9 @@ def validate_key(key: str) -> dict:
         payload = _decode_payload(key, team_prefix)
         if payload and payload.get("tier") == "team":
             if _check_expiry(payload):
+                if is_revoked(key):
+                    return {"valid": False, "tier": "free", "expires": None,
+                            "message": "This license key has been revoked. If you believe this is an error, contact contact@getdatacleaner.com."}
                 expiry_info = ""
                 exp = payload.get("expires")
                 if exp:
