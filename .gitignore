@@ -86,4 +86,8 @@ secrets.yml
 *.sql.gz
 *.dump
 *.bak
+
+# === SECURITY: License Keys ===
+# NEVER commit license key CSVs — they contain active product keys
+*_license_keys.csv
 datacleaner-release-v*/
