@@ -506,15 +506,35 @@ def scrub_dump(
             col_table.add_row(h, "[dim]clean[/dim]", "-")
     console.print(col_table)
 
-    # --- Scrub ---
-    console.print(f"\n  [bold]Phase 2:[/bold] Scrubbing {len(sensitive_cols)} sensitive column(s)...")
-    pii_by_column = {}
+    # --- Set up tiered masking engine ---
+    vault = None
+    vault_path = None
+    if level == "admin":
+        if not password:
+            raise ValueError("--password required for admin mode (recoverable tokenization)")
+        vault = TokenVault(password)
+
+    # Resolve masking level per column
+    col_masking_levels = {}
+    deleted_cols = set()
+    for h in sensitive_cols:
+        ml = get_masking_level(h, level)
+        col_masking_levels[h] = ml
+        if ml == L4_DELETE:
+            deleted_cols.add(h)
+
+    # --- Scrub with tiered engine ---
+    console.print(f"\n  [bold]Phase 2:[/bold] Scrubbing {len(sensitive_cols)} sensitive column(s) [dim](mode={level})[/dim]...")
+    pii_by_column = {h: 0 for h in sensitive_cols if h not in deleted_cols}
     total_cells_scrubbed = 0
+    pii_type_cache = {}
 
     for header in sensitive_cols:
-        count = 0
-        pii_type_cache = {}  # cache PII type per unique value
+        if header in deleted_cols:
+            console.print(f"  [dim]🗑[/dim] {header}: [dim]deleted[/dim]")
+            continue
 
+        ml = col_masking_levels[header]
         for row in rows:
             value = str(row.get(header, ""))
             if not value.strip():
@@ -525,40 +545,38 @@ def scrub_dump(
                 pii_type_cache[value] = _get_pii_type_for_cell(value) or "generic"
 
             pii_type = pii_type_cache[value]
-            if pii_type:
-                row[header] = _generate_fake_value(value, pii_type)
-                count += 1
+            row[header], deleted = apply_mask(value, pii_type, ml, vault)
+            if deleted:
+                deleted_cols.add(header)
+                continue
+            pii_by_column[header] += 1
+            total_cells_scrubbed += 1
 
-        pii_by_column[header] = count
-        total_cells_scrubbed += count
-        console.print(f"  [green]✓[/green] {header}: [yellow]{count}[/yellow] cells scrubbed")
+        console.print(f"  [green]✓[/green] {header}: [yellow]{pii_by_column[header]}[/yellow] cells scrubbed")
+
+    # Remove L4_DELETE columns from output
+    write_headers = [h for h in headers if h not in deleted_cols]
 
     # --- Write output ---
     console.print(f"\n  [bold]Phase 3:[/bold] Writing scrubbed output...")
     if dump_format == "csv":
-        write_csv_dump(output_path, headers, rows)
+        write_csv_dump(output_path, write_headers, rows)
     elif dump_format == "json":
+        # Strip deleted columns from each row
+        clean_rows = [{k: v for k, v in row.items() if k not in deleted_cols} for row in rows]
         with open(output_path, "w", encoding="utf-8") as f:
-            json.dump(rows, f, indent=2, ensure_ascii=False)
+            json.dump(clean_rows, f, indent=2, ensure_ascii=False)
     elif dump_format == "sql":
-        _write_sql_output(output_path, rows, headers, sensitive_cols, pii_by_column)
+        active_sensitive = [h for h in sensitive_cols if h not in deleted_cols]
+        _write_sql_output(output_path, rows, write_headers, active_sensitive, pii_by_column)
 
     console.print(f"  [green]✓[/green] {output_path}")
 
     # --- Audit log ---
-    audit_data = {
-        "timestamp": __import__("datetime").datetime.utcnow().isoformat() + "Z",
-        "input_file": str(input_path),
-        "output_file": str(output_path),
-        "format": dump_format,
-        "style": style,
-        "total_rows": len(rows),
-        "total_columns": len(headers),
-        "sensitive_columns": sensitive_cols,
-        "total_cells_scrubbed": total_cells_scrubbed,
-        "pii_by_column": pii_by_column,
-        "column_classification": {h: ("SENSITIVE" if s else "clean") for h, s in column_status.items()},
-    }
+    active_sensitive = [h for h in sensitive_cols if h not in deleted_cols]
+    audit_data = _build_audit(input_path, output_path, dump_format, style,
+                              len(rows), headers, active_sensitive, total_cells_scrubbed,
+                              pii_by_column, column_status)
     audit_path = get_audit_path(input_path, audit_base)
     save_audit_log(audit_data, audit_path)
     console.print(f"  [dim]Audit: {audit_path}[/dim]")
@@ -570,22 +588,43 @@ def scrub_dump(
         "pii_by_column": pii_by_column,
     }
 
+    # --- Save vault for admin mode ---
+    if vault is not None:
+        vault_path = vault.save(output_path)
+        console.print(f"  [green]🔑 Recovery vault:[/green] {vault_path}")
+        console.print(f"  [dim]  Use: dc recover {output_path.name} --password <your-password>[/dim]")
+
     # --- Display summary ---
     console.print()
-    console.print(Panel.fit(
-        f"[green]✓ Scrubbing complete[/green]\n"
-        f"  {len(rows)} rows × {len(headers)} columns\n"
-        f"  {len(sensitive_cols)} sensitive columns found\n"
-        f"  {total_cells_scrubbed} cells anonymized\n"
+    summary_lines = [
+        f"[green]✓ Scrubbing complete[/green]",
+        f"  {len(rows)} rows × {len(write_headers)} columns",
+        f"  {len(active_sensitive)} sensitive columns scrubbed",
+    ]
+    if deleted_cols:
+        summary_lines.append(f"  [dim]{len(deleted_cols)} column(s) deleted[/dim]")
+    summary_lines.extend([
+        f"  {total_cells_scrubbed} cells anonymized",
         f"  Output: {output_path.name}",
-        border_style="green",
-    ))
+    ])
+    console.print(Panel.fit("\n".join(summary_lines), border_style="green"))
 
     if output_json:
         console.print("\n[JSON Output]")
-        console.print(json.dumps(stats, indent=2, ensure_ascii=False))
+        result_stats = {
+            **stats,
+            "masking_level": level,
+            "deleted_columns": list(deleted_cols) if deleted_cols else [],
+            "vault_path": str(vault_path) if vault_path else None,
+        }
+        console.print(json.dumps(result_stats, indent=2, ensure_ascii=False))
 
-    return stats
+    return {
+        **stats,
+        "vault_path": str(vault_path) if vault_path else None,
+        "masking_level": level,
+        "deleted_columns": list(deleted_cols) if deleted_cols else [],
+    }
 
 
 # ============================================================

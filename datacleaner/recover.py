@@ -88,6 +88,15 @@ def main():
     except FileNotFoundError as e:
         print(f"Error: {e}", file=sys.stderr)
         sys.exit(1)
+    except ValueError as e:
+        # cryptography raises InvalidTag (subclass of ValueError) on wrong password
+        msg = str(e)
+        if "InvalidTag" in msg or "invalid" in msg.lower() or "bad decrypt" in msg.lower():
+            print("Error: Wrong password — cannot decrypt the recovery vault.", file=sys.stderr)
+            print("Make sure you are using the same password that was set during admin-mode scrubbing.", file=sys.stderr)
+        else:
+            print(f"Error: {e}", file=sys.stderr)
+        sys.exit(1)
     except Exception as e:
         print(f"Error: {e}", file=sys.stderr)
         sys.exit(1)
