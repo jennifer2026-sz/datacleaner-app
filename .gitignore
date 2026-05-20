@@ -60,6 +60,8 @@ _AI_*
 # === INTERNAL: Marketing research docs (local only, never push) ===
 02_营销素材/*.docx
 02_营销素材/*.doc
+02_营销素材/key-management-sop.md
+02_营销素材/email-templates-en.md
 
 # === SECURITY: Encryption & Key Material ===
 # NEVER commit vault files — they contain AES-256 encrypted token mappings
