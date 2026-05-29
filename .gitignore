@@ -101,5 +101,7 @@ secrets.yml
 # NEVER commit license key files — they contain active product keys
 *_license_keys.csv
 *_license_keys.txt
+# NEVER commit license key CSVs — they contain active product keys
+*_license_keys.csv
 key_tracker.csv
 datacleaner-release-v*/

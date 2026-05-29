@@ -101,6 +101,7 @@ body { background: var(--bg-deep); color: var(--text-primary); font-family: var(
             <span class="post-tag">Engineering</span>
         </div>
         <h2><a href="#post-8">Not All Data Masking Is Equal: Why We Built 5 Levels into One CLI Tool</a></h2>
+        <h2><a href="/blog/5-level-pii-masking-engine.html">Not All Data Masking Is Equal: Why We Built 5 Levels into One CLI Tool</a></h2>
         <div class="post-body">
             <p>Every company that handles personal data eventually hits the same wall: <strong>one anonymization strategy does not fit all audiences</strong>. The scrubbed data you send to a third-party auditor looks nothing like the scrubbed data your customer support team needs. Yet most tools treat masking as a binary switch — scrub or don't scrub.</p>
 
@@ -228,6 +229,7 @@ dc recover employees_scrubbed.csv --password "master-key"</code></pre>
             <span class="post-tag">Compliance</span>
         </div>
         <h2><a href="#post-7">GDPR Article 17: Why Deterministic Hashing Is the Only Safe Way to Anonymize</a></h2>
+        <h2><a href="/blog/deterministic-hashing-gdpr.html">GDPR Article 17: Why Deterministic Hashing Is the Only Safe Way to Anonymize</a></h2>
         <div class="post-body">
             <p>If you're a developer who's ever been asked to "just anonymize the production database for testing," you know the panic. GDPR Article 17 gives EU citizens the right to have their data erased — completely and irrevocably. But here's the trap: most "anonymization" tools don't actually delete anything. They just scramble the surface.</p>
 
@@ -264,6 +266,7 @@ appointments.contact = alice@hospital.com → anon_b4f6@scrubbed.local
             <span class="post-tag">Engineering</span>
         </div>
         <h2><a href="#post-6">Streaming CSV Processing: How We Handle 100GB+ Dumps Without OOM</a></h2>
+        <h2><a href="/blog/streaming-csv-processing.html">Streaming CSV Processing: How We Handle 100GB+ Dumps Without OOM</a></h2>
         <div class="post-body">
             <p>DataCleaner v0.2.0 ships with a complete rewrite of our CSV processing pipeline. The old approach — load entire file into memory, process, write — worked fine for 10MB customer lists. It collapsed catastrophically at 500MB production database dumps. Here's how we fixed it.</p>
 

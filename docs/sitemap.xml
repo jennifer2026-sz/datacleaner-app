@@ -15,6 +15,17 @@
   <url>
     <loc>https://getdatacleaner.com/purchase.html</loc>
     <lastmod>2026-05-03</lastmod>
+    <loc>https://getdatacleaner.com/blog/deterministic-hashing-gdpr.html</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://getdatacleaner.com/blog/5-level-pii-masking-engine.html</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://getdatacleaner.com/blog/streaming-csv-processing.html</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
@@ -41,5 +52,25 @@
     <lastmod>2026-05-20</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.5</priority>
+  </url>
+</urlset>
+    <loc>https://getdatacleaner.com/purchase.html</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://getdatacleaner.com/privacy.html</loc>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
+  </url>
+  <url>
+    <loc>https://getdatacleaner.com/terms.html</loc>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
+  </url>
+  <url>
+    <loc>https://getdatacleaner.com/eula.html</loc>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
   </url>
 </urlset>
