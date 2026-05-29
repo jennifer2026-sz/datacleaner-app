@@ -98,7 +98,8 @@ secrets.yml
 *.bak
 
 # === SECURITY: License Keys ===
-# NEVER commit license key CSVs — they contain active product keys
+# NEVER commit license key files — they contain active product keys
 *_license_keys.csv
+*_license_keys.txt
 key_tracker.csv
 datacleaner-release-v*/
