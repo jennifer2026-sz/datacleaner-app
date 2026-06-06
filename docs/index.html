@@ -206,7 +206,7 @@ body {
 }
 
 /* ===== PRICING ===== */
-.pricing-grid { display:grid; grid-template-columns:repeat(3, 1fr); gap:24px; align-items:stretch; }
+.pricing-grid { display:grid; grid-template-columns:repeat(2, 1fr); gap:24px; align-items:stretch; }
 .pricing-card {
     background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius-lg);
     padding:36px 32px; position:relative; transition:all 0.3s; display:flex; flex-direction:column;
@@ -494,25 +494,6 @@ body {
             <p>Buy once, own forever. Optional annual renewal for continued updates.</p>
         </div>
         <div class="pricing-grid">
-            <!-- FREE -->
-            <div class="pricing-card">
-                <div class="pricing-tier">Free Tier</div>
-                <div class="pricing-amount">$0</div>
-                <p class="pricing-desc">For individuals evaluating PII detection.</p>
-                <ul class="pricing-features">
-                    <li>Regex PII scanning (50+ patterns)</li>
-                    <li>Block & mask redaction styles</li>
-                    <li>CSV, JSON, TXT support</li>
-                    <li>Audit log generation</li>
-                    <li class="disabled">LLM contextual scanning</li>
-                    <li class="disabled">Deterministic hashing</li>
-                    <li class="disabled">Database dump scrubbing</li>
-                    <li class="disabled">PDF, DOCX, XLSX support</li>
-                </ul>
-                <div class="pricing-cta">
-                    <a href="https://github.com/jennifer2026-sz/datacleaner-app" class="btn btn-outline" target="_blank">Download Free</a>
-                </div>
-            </div>
             <!-- PRO -->
             <div class="pricing-card featured">
                 <div class="pricing-badge">MOST POPULAR</div>
@@ -520,7 +501,7 @@ body {
                 <div class="pricing-amount">$149<span> one-time</span></div>
                 <p class="pricing-desc">Single-user license. Unlimited everything. Year 1 updates included.</p>
                 <ul class="pricing-features">
-                    <li>Everything in Free</li>
+                    <li>Regex PII scanning (50+ patterns)</li>
                     <li>LLM contextual PII detection</li>
                     <li>Deterministic SHA-256 hashing</li>
                     <li>Database dump scrubbing</li>
